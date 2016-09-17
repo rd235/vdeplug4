@@ -1,0 +1,30 @@
+.TH LIBVDEPLUG_VDE 1 "August 23, 2016" "Virtual Distributed Ethernet"
+.SH NAME
+libvdeplug_tap - vdeplug module: tap interface 
+.SH SYNOPSIS
+libvdeplug_tap.so
+.SH DESCRIPTION
+This is the standard vdeplug module to connect a TAP interface.
+This module of libvdeplug4 can be used in any program supporting vde like
+\fBvde_plug\fR, \fBkvm\fR, \fBqemu\fR, \fBuser-mode-linux\fR and \fBvirtualbox\fR.
+\fBtunctl\fR or \fBvde_tunctl\fR can be used to  preconfigure a TAP device for use by a particular user.
+
+The vde_plug_url syntax of this module is the following:
+.RS
+.br
+\fBtap://\fIname_of_tap_interface\fR
+.RE
+
+.SH EXAMPLES
+.B tap://mytap
+.br
+This vde_plug_url refers the tap interface named \fBmytap\fR.
+.SH NOTICE
+Virtual Distributed Ethernet is not related in any way with
+www.vde.com ("Verband der Elektrotechnik, Elektronik und Informationstechnik"
+i.e. the German "Association for Electrical, Electronic & Information
+Technologies").
+.SH SEE ALSO
+\fBvde_plug\fP(1),
+\fBtunctl\fP(1),
+\fBvde_tunctl\fP(1),

@@ -1,0 +1,36 @@
+.TH LIBVDEPLUG_UDP 1 "August 23, 2016" "Virtual Distributed Ethernet"
+.SH NAME
+libvdeplug_udp - vdeplug module for point to point connections using UDP
+.SH SYNOPSIS
+libvdeplug_udp.so
+.SH DESCRIPTION
+\fBlibvdeplug_udp\fR creates a point to point connection between two vde supporting
+tools using UDP.
+This module of libvdeplug4 can be used in any program supporting vde like
+\fBvde_plug\fR, \fBkvm\fR, \fBqemu\fR, \fBuser-mode-linux\fR and \fBvirtualbox\fR.
+
+The network connection created by this module is not encrypted so the data transferred
+can be intercepted by network analyzer programs.
+
+The vde_plug_url syntax of this module is the following:
+.RS
+.br
+\fBudp://\fR[\fIsrc_address\fB:\fR]\fIsrc_port\fB->\fIdest_address\fB:\fIdest_port\fR
+.RE
+
+.SH EXAMPLES
+.B udp://2000->host_b.domain_b.org:3000
+.br
+.B udp://3000->host_a.domain_a.org:2000
+.br
+These are the vde_plug_urls to use at host_a.domain_a.org and host_b.domain_b.org respectively to
+create a connection between port 2000 at host_a and port 3000 at port_b.
+
+.SH NOTICE
+Virtual Distributed Ethernet is not related in any way with
+www.vde.com ("Verband der Elektrotechnik, Elektronik und Informationstechnik"
+i.e. the German "Association for Electrical, Electronic & Information
+Technologies").
+.SH SEE ALSO
+\fBvde_switch\fP(1),
+\fBvde_plug\fP(1),

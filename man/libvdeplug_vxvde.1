@@ -1,0 +1,68 @@
+.TH LIBVDEPLUG_VXVDE 1 "August 23, 2016" "Virtual Distributed Ethernet"
+.SH NAME
+libvdeplug_vxvde - vdeplug module for vde_switch based networks
+.SH SYNOPSIS
+libvdeplug_vxvde.so
+.SH DESCRIPTION
+This is the libvdeplug module to join vxvde networks.
+Vxvde is a distributed implementation of virtual networks. There is no need for extra processes
+like virtual switches.
+
+This module of libvdeplug4 can be used in any program supporting vde like
+\fBvde_plug\fR, \fBkvm\fR, \fBqemu\fR, \fBuser-mode-linux\fR and \fBvirtualbox\fR.
+
+The vde_plug_url syntax of this module is the following:
+.RS
+.br
+\fBvxvde://\fR[\fImulticast_addr\fR][\fB/\fIOPTION\fR][\fB/\fIOPTION\fR]
+.RE
+
+If \fImulticast_addr\fR is omitted libvdeplug_vxvde uses the default addresses:
+\fB239.0.0.1\fR for IPv4 and \fBff05:56de::1\fR for IPv6.
+
+.SH OPTIONS
+.TP
+\fBv4\fR
+use IPv4
+.TP
+\fBv6\fR
+use IPv6
+.TP
+\fBport=\fR\fIPORT
+define the multicast port (default value 14879)
+.TP
+\fBvni=\fR\fIVNI
+define the virtual network identifier (default value 1).
+(a group name can be used as VNI, in that case the vni is the group id).
+.TP
+\fBttl=\fR\fITTL
+define the time-to-live (default value 1). 
+.TP
+\fBgrp=\fR\fIgroup_name_or_number
+Set the VNI and the last three bytes of the IP address to the group id.
+.TP
+\fBhashsize=\fR\fIHASHSIZE
+set the size of the hash table for packet switching
+.TP
+\fBexpiretime=\fR\fIEXPIRETIME
+set the maximum age in seconds of valid packet switching entries
+.TP
+\fBif=\fR\fIINTERFACE
+set the (real) network interface to use.
+.SH EXAMPLES
+.B vxvde://239.0.0.1
+.br
+This vde_plug_url refers to the vxvde network defined on the multicast address 239.0.0.1, vni=1.
+.sp
+Programs using
+.br
+.B vxvde://ff15::3/port=12345/vni=42
+.br
+join the same vxvde network defined by the multicast addres ff15::1, port 12345, vni is 42.
+.SH NOTICE
+Virtual Distributed Ethernet is not related in any way with
+www.vde.com ("Verband der Elektrotechnik, Elektronik und Informationstechnik"
+i.e. the German "Association for Electrical, Electronic & Information
+Technologies").
+.SH SEE ALSO
+\fBvde_plug\fP(1),

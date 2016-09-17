@@ -1,0 +1,30 @@
+.TH LIBVDEPLUG_P2P 1 "August 23, 2016" "Virtual Distributed Ethernet"
+.SH NAME
+libvdeplug_p2p - vdeplug module for point to point connections
+.SH SYNOPSIS
+libvdeplug_p2p.so
+.SH DESCRIPTION
+This module interconnects two vde supporting tools by a point to point
+communication line.
+This module of libvdeplug4 can be used in any program supporting vde like
+\fBvde_plug\fR, \fBkvm\fR, \fBqemu\fR, \fBuser-mode-linux\fR and \fBvirtualbox\fR.
+
+The vde_plug_url syntax of this module is the following:
+.RS
+.br
+\fBvde://\fIpath_of_the_socket\fR
+.RE
+
+.SH EXAMPLES
+.B p2p:///tmp/sock
+.br
+The same vde_plug_url can be used at both ends of the connection.
+The first program creates the socket \fB/tmp/sock\fR. The second program connects to
+\fB/tmp/sock\fR, when a it discovers that the socket already exists.
+.SH NOTICE
+Virtual Distributed Ethernet is not related in any way with
+www.vde.com ("Verband der Elektrotechnik, Elektronik und Informationstechnik"
+i.e. the German "Association for Electrical, Electronic & Information
+Technologies").
+.SH SEE ALSO
+\fBvde_plug\fP(1),

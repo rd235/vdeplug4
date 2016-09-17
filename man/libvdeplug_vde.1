@@ -1,0 +1,40 @@
+.TH LIBVDEPLUG_VDE 1 "August 23, 2016" "Virtual Distributed Ethernet"
+.SH NAME
+libvdeplug_vde - vdeplug module for vde_switch based networks
+.SH SYNOPSIS
+libvdeplug_vde.so
+.SH DESCRIPTION
+This is the standard vdeplug module for vde_switch based networks.
+This module of libvdeplug4 can be used in any program supporting vde like
+\fBvde_plug\fR, \fBkvm\fR, \fBqemu\fR, \fBuser-mode-linux\fR and \fBvirtualbox\fR.
+The vde_plug_url syntax of the module is the following:
+.RS
+.br
+\fBvde://\fIpath_of_the_switch\fR[\fB[\fIport#_or_portgroup\fB]\fR]
+.RE
+
+This is the default module for libvdeplug, any string not containing '://' (like a path)
+is processes by libvdeplug_vde. (e.g. /tmp/vde.ctl is equivalent to  vde:///tmp/vde.ctl).
+
+.SH EXAMPLES
+.B vde:///tmp/myswitch
+.br
+This vde_plug_url refers to the vde_switch identified by the directory \fB/tmp/vde_switch\fR.
+Please note that there are three slashes '///' as 'vde://' is the prefix and the third slash is
+the first character of the absolute path.
+.br
+.B vde://thisswitch[3]
+.br
+this means the port #3 of the switch whose identifier is \fBthisswitch\fR in the current directory
+.br
+.B vde:///var/run/vde.ctl[privatelan]
+.br
+this is used to create a connetion to the pertgroup \fBprivatelan\fR of the switch \fB/var/run/vde.ctl\fR.
+.SH NOTICE
+Virtual Distributed Ethernet is not related in any way with
+www.vde.com ("Verband der Elektrotechnik, Elektronik und Informationstechnik"
+i.e. the German "Association for Electrical, Electronic & Information
+Technologies").
+.SH SEE ALSO
+\fBvde_switch\fP(1),
+\fBvde_plug\fP(1),
