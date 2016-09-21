@@ -70,6 +70,9 @@ VDECONN *vde_open_real(char *given_sockname, char *descr,int interface_version,
 	int pid = getpid();
 	char *tag;
 
+	if (given_sockname == NULL)
+		given_sockname = "";
+
 	callerpwd=getpwuid(getuid());
 
 	descrlen=snprintf(newdescr,MAXDESCR,"%s user=%s PID=%d",
@@ -84,24 +87,25 @@ VDECONN *vde_open_real(char *given_sockname, char *descr,int interface_version,
 		if (endofip) *endofip=' ';
 	}
 
-	if (given_sockname == NULL || *given_sockname == '\0') {
+	if (*given_sockname == '\0') {
 		char *homedir = getenv("HOME");
 		if (homedir) {
 			char *stdswitch;
-			asprintf(&stdswitch, "%s%s", homedir, STDSWITCH);
-			if (readlink(stdswitch,std_sockname,PATH_MAX) < 0)
-				std_sockname[0]=0;
-			free(stdswitch);
-			given_sockname=std_sockname;
+			if (asprintf(&stdswitch, "%s%s", homedir, STDSWITCH) >= 0) {
+				if (readlink(stdswitch,std_sockname,PATH_MAX) >= 0)
+					given_sockname=std_sockname;
+				free(stdswitch);
+			}
 		}
 	}
 	if (lstat(given_sockname,&statbuf) >= 0) {
 		if (S_ISREG(statbuf.st_mode)) {
 			FILE *f=fopen(given_sockname,"r");
-			if (f) {
-				fgets(std_sockname,PATH_MAX,f);
-				std_sockname[strlen(std_sockname)-1] = 0;
-				given_sockname=std_sockname;
+			if (f != NULL) {
+				if (fgets(std_sockname,PATH_MAX,f) != NULL) {
+					std_sockname[strlen(std_sockname)-1] = 0;
+					given_sockname=std_sockname;
+				}
 				fclose(f);
 			}
 		}

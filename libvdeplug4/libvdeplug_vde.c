@@ -229,7 +229,8 @@ static VDECONN *vde_vde_open(char *given_sockname, char *descr,int interface_ver
 			gid=atoi(group);
 		else
 			gid=gs->gr_gid;
-		chown(req.sock.sun_path,-1,gid);
+		if (chown(req.sock.sun_path,-1,gid) < 0)
+			goto abort;
 	} else {
 		/* when group is not defined, set permission for the reverse channel */
 		struct stat ctlstat;

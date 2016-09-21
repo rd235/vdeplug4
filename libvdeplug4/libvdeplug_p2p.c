@@ -117,7 +117,8 @@ static VDECONN *vde_p2pf_open(char *given_sockname, char *descr,int interface_ve
 			gid=atoi(group);
 		else
 			gid=gs->gr_gid;
-		chown(sockun.sun_path,-1,gid);
+		if (chown(sockun.sun_path,-1,gid) < 0)
+			goto abort;
 	}
 	chmod(sockun.sun_path,mode);
 
@@ -200,7 +201,8 @@ static VDECONN *vde_p2pm_open(char *given_sockname, char *descr,int interface_ve
 			gid=atoi(group);
 		else
 			gid=gs->gr_gid;
-		chown(sockun.sun_path,-1,gid);
+		if (chown(sockun.sun_path,-1,gid) < 0)
+			goto abort;
 	}
 	chmod(sockun.sun_path,mode);
 

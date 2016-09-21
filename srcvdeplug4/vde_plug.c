@@ -156,8 +156,10 @@ int plug2stream(void) {
 int plug2cmd(char **argv) {
 	int p2c[2],c2p[2];
 	pid_t pid;
-	pipe(p2c);
-	pipe(c2p);
+	if (pipe(p2c) < 0 || pipe(c2p) < 0) {
+		perror("pipe open");
+		return(1);
+	}
 
 	pid=fork();
 	if (pid < 0) {
@@ -379,8 +381,12 @@ int main(int argc, char *argv[])
 						 break;
 	}
 
-	if (daemonize != 0)
-		daemon(0,0);
+	if (daemonize != 0) {
+		if (daemon(0,0) < 0) {
+			fprintf(stderr,"%s daemonize: %s\n", progname, strerror(errno));
+			exit(1);
+		}
+	}
 
 	if (pidfile != NULL)
 		openclosepidfile(pidfile);

@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <errno.h>
 #include <sys/wait.h>
 
 #include <selfsighandler.h>
@@ -66,7 +67,7 @@ static void sigcleanup(void)
 
 int waitfortermination(pid_t last) {
 	int status;
-	int rval;
+	int rval = -1;
 	pid_t pid;
 	lastpid = last;
 	while ((pid = waitpid(-1, &status, 0)) >= 0) {
@@ -181,10 +182,20 @@ pid_t rec_dpipe(int argc, char *argv[],int olddirchar,unsigned int flags)
 		if (argc < 3 || split == 0 || split == argc-1) 
 			usage_and_exit();
 
-		pipe(p1);
+		if (pipe(p1) < 0) {
+			perror("pipe");
+			exit(1);
+		}
+
 		/* ..chain already processed.. = this =....
 			 two pipes needed */
-		if (olddirchar == 0) pipe(p2);
+		if (olddirchar == 0) {
+			if (pipe(p2) < 0) {
+				perror("second pipe");
+				exit(1);
+			}
+		}
+
 		argv[split]=NULL;
 		argv1=argv;
 		argv2=argv+(split+1);
@@ -337,9 +348,12 @@ int main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if ((flags & DAEMONIZE) != 0)
-		daemon(0,0);
-	else if (setpgrp() != 0) {
+	if ((flags & DAEMONIZE) != 0) {
+		if (daemon(0,0) < 0) {
+			fprintf(stderr,"%s daemonize: %s\n", progname, strerror(errno));
+			exit(1);
+		}
+	} else if (setpgrp() != 0) {
 		fprintf(stderr,"Err: cannot create pgrp\n");
 		exit(1);
 	}
