@@ -278,8 +278,11 @@ pid_t start_dpipe(int argc, char *argv[], unsigned int flags)
 	if (argc < 3 || split == 0 || split >= argc-1) 
 		usage_and_exit();
 
-	pipe(p1);
-	pipe(p2);
+	if (pipe(p1) < 0 || pipe(p2) < 0) {
+		perror("pipe");
+		exit(1);
+	}
+
 	argv[split]=NULL;
 	argv1=argv;
 	argv2=argv+(split+1);
