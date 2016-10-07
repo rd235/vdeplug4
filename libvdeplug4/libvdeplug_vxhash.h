@@ -28,6 +28,10 @@ struct sockaddr *vx_find_in_hash(void *table, int sa_family, unsigned int hash_m
 void vx_find_in_hash_update(void *table, unsigned int hash_mask,
 		unsigned char *src, int vlan, struct sockaddr *addr, time_t now);
 
+/* delete all the entries from a sender (who sent a poisoning packet) */
+void vx_hash_delete(void *table, unsigned int hash_mask,
+		 struct sockaddr *addr);
+
 /* init the hash table */
 /* hash_mask must be 2^n - 1 */
 void *vx_hash_init(int sa_family, unsigned int hash_mask);

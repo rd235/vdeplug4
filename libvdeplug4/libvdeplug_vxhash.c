@@ -117,6 +117,28 @@ void vx_find_in_hash_update(void *table, unsigned int hash_mask,
 	entry->last_seen=now;
 }
 
+void vx_hash_delete(void *table, unsigned int hash_mask,
+		 struct sockaddr *addr)
+{
+	unsigned int i;
+	switch (addr->sa_family) {
+		case AF_INET: { struct hash_entry4 *t4 = table;
+										for (i = 0; i < hash_mask + 1; i++) {
+											if (memcmp(&t4[i].addr, addr, sizeof(struct sockaddr_in)) == 0)
+												t4[i].last_seen = 0;
+										}
+										break;
+									}
+		case AF_INET6: { struct hash_entry6 *t6 = table;
+										 for (i = 0; i < hash_mask + 1; i++) {
+											 if (memcmp(&t6[i].addr, addr, sizeof(struct sockaddr_in6)) == 0)
+												 t6[i].last_seen = 0;
+										 }
+										 break;
+									 }
+	}
+}
+
 /* hash_mask must be 2^n - 1 */
 void *vx_hash_init(int sa_family, unsigned int hash_mask)
 {
