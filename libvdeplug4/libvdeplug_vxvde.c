@@ -547,7 +547,8 @@ static ssize_t vde_vxvde_recv(VDECONN *conn,void *buf,size_t len,int flags) {
 			vx_find_in_hash_update(vde_conn->table, vde_conn->hash_mask, ehdr->src, 1, msg.msg_name, time(NULL));
 			return retval;
 		} else if (retval == 0) {
-			vx_hash_delete(vde_conn->table, vde_conn->hash_mask, msg.msg_name);
+			if (vhdr64 == vde_conn->connhdr64)
+				vx_hash_delete(vde_conn->table, vde_conn->hash_mask, msg.msg_name);
 		}
 	}
 error:
@@ -597,7 +598,7 @@ static int vde_vxvde_ctlfd(VDECONN *conn) {
 
 static int vde_vxvde_close(VDECONN *conn) {
 	struct vde_vxvde_conn *vde_conn = (struct vde_vxvde_conn *)conn;
-	sendto(vde_conn->unifd, &vde_conn->multiaddr.vx, sizeof(struct vxvde_hdr), 0,
+	sendto(vde_conn->unifd, &vde_conn->connhdr, sizeof(struct vxvde_hdr), 0,
 			&vde_conn->multiaddr.vx, fam2socklen(&vde_conn->multiaddr.vx));
 	close(vde_conn->unifd);
 	close(vde_conn->multifd);
