@@ -81,6 +81,59 @@ gid_t vde_grnam2gid(const char *name) {
 	return -1;
 }
 
+#define CHAR 0
+#define QUOTE 1
+#define DOUBLEQ 2
+#define ESC 3
+#define DELIM 4
+#define END 5
+
+#define COPY 1
+
+static char nextstate[4][6] = {
+	{CHAR, QUOTE, DOUBLEQ, ESC, DELIM, END},
+	{QUOTE, CHAR, QUOTE, QUOTE, QUOTE, END},
+	{DOUBLEQ, DOUBLEQ, CHAR, DOUBLEQ, DOUBLEQ, END},
+	{CHAR, CHAR, CHAR, CHAR, CHAR, END}};
+
+static char action[4][6] = {
+	{COPY, 0, 0, 0, 0, 0},
+	{COPY, 0, COPY, COPY, COPY, 0},
+	{COPY, COPY, 0, COPY, COPY, 0},
+	{COPY, COPY, COPY, COPY, COPY, 0}};
+
+
+static char *strtokq_r(char *s, const char *delim, char **saveptr) {
+	char *begin, *from, *to;
+	int status = CHAR;
+	begin = (s == NULL) ? *saveptr : s;
+	from = to = begin;
+	if (from == NULL)
+		return NULL;
+	begin = from;
+	while ((status & DELIM) == 0) { /* this includes END */
+		int this;
+		int todo;
+		switch (*from) {
+			case 0: this = END; break;
+			case '\'': this = QUOTE; break;
+			case '\"': this = DOUBLEQ; break;
+			case '\\': this = ESC; break;
+			default: this = strchr(delim, *from) == NULL ? CHAR : DELIM;
+		}
+		todo = action[status][this];
+		if (todo & COPY)
+			*to++ = *from++;
+		else
+			from++;
+		status = nextstate[status][this];
+	}
+	*to = 0;
+	*saveptr = (status == END) ? NULL : from;
+	return begin;
+}
+
+
 int vde_parseparms(char *str,struct vdeparms *parms){
 	if (*str != 0) {
 		str = strchr(str,'/');
@@ -90,7 +143,7 @@ int vde_parseparms(char *str,struct vdeparms *parms){
 			do
 				*(str++)=0;
 			while (*str == '/');
-			for (; (elem = strtok_r(str,"/",&sp)) != NULL ; str = NULL) {
+			for (; (elem = strtokq_r(str,"/",&sp)) != NULL ; str = NULL) {
 				char *eq = strchr(elem, '=');
 				int taglen=eq ? eq-elem : strlen(elem);
 				struct vdeparms *scan;
