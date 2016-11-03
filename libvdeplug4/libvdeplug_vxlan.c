@@ -157,7 +157,7 @@ static VDECONN *vde_vxlan_open(char *sockname, char *descr,int interface_version
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	/* Allow IPv4 or IPv6 if either none or both options v4/v6 were selected*/
-	switch ((!!v6str) | (!!v4str)) {
+	switch (((!!v6str) << 1) | (!!v4str)) {
 		case 0: hints.ai_family = AF_UNSPEC; break;
 		case 1: hints.ai_family = AF_INET; break;
 		case 2: hints.ai_family = AF_INET6; break;
