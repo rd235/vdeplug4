@@ -40,7 +40,7 @@
 
 VDECONN *vde_open_module(char *modname, char *sockname, char *descr,int interface_version,
 		    struct vde_open_args *open_args) {
-	void *handle=dlopen(modname, RTLD_NOW);
+	void *handle=dlopen(modname, RTLD_NOW | RTLD_DEEPBIND);
 	if (handle) {
 		struct vdeplug_module *module=dlsym(handle,"vdeplug_ops");
 		if (module) {
