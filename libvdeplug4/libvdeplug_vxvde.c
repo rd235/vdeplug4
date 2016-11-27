@@ -145,7 +145,7 @@ static int is_a_localaddr(void *sockaddr)
 #ifdef LOCALBIND
 	switch (s->sa_family) {
 		case AF_INET: {
-										int tmpfd=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+										int tmpfd=socket(AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDP);
 										if (tmpfd >= 0) {
 											struct sockaddr_in s4=*((struct sockaddr_in *)s);
 											s4.sin_port = 0;
@@ -156,7 +156,7 @@ static int is_a_localaddr(void *sockaddr)
 									}
 									break;
 		case AF_INET6: {
-										 int tmpfd=socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+										 int tmpfd=socket(AF_INET6, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDP);
 										 if (tmpfd >= 0) {
 											 struct sockaddr_in6 s6=*((struct sockaddr_in6 *)s);
 											 s6.sin6_port = 0;
@@ -297,9 +297,9 @@ static VDECONN *vde_vxvde_open(char *sockname, char *descr,int interface_version
 											 int one = 1;
 											 multiaddr = (struct sockaddr *) addr;
 
-											 if ((multifd=socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+											 if ((multifd=socket(AF_INET6, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDP)) < 0)
 												 goto error;
-											 if ((unifd=socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+											 if ((unifd=socket(AF_INET6, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDP)) < 0)
 												 goto error;
 											 if (rcvbufstr) {
 												 unsigned int rcvbuf = strtoullm(rcvbufstr);
@@ -363,9 +363,9 @@ static VDECONN *vde_vxvde_open(char *sockname, char *descr,int interface_version
 											int one = 1;
 											multiaddr = (struct sockaddr *) addr;
 
-											if ((multifd=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+											if ((multifd=socket(AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDP)) < 0)
 												goto error;
-											if ((unifd=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+											if ((unifd=socket(AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDP)) < 0)
 												goto error;
 											if (rcvbufstr) {
 												unsigned int rcvbuf = strtoullm(rcvbufstr);
@@ -435,7 +435,7 @@ static VDECONN *vde_vxvde_open(char *sockname, char *descr,int interface_version
 		goto error;
 	}
 
-	if ((pollfd = epoll_create1(0)) < 0) {
+	if ((pollfd = epoll_create1(EPOLL_CLOEXEC)) < 0) {
 		goto error;
 	} else {
 		struct epoll_event ev;

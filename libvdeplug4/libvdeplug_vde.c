@@ -150,9 +150,9 @@ static VDECONN *vde_vde_open(char *given_sockname, char *descr,int interface_ver
 	memset(&dataout, 0, sizeof(dataout));
 
 	/* connection to a vde_switch */
-	if((fdctl = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)
+	if((fdctl = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0)) < 0)
 		goto abort;
-	if((fddata = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0)
+	if((fddata = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0)) < 0)
 		goto abort;
 	sockun.sun_family = AF_UNIX;
 

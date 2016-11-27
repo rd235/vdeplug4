@@ -191,7 +191,7 @@ static VDECONN *vde_vxlan_open(char *sockname, char *descr,int interface_version
 											 struct sockaddr_in6 bindaddr;
 											 int loop = 0;
 
-											 if ((multifd=socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+											 if ((multifd=socket(AF_INET6, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDP)) < 0)
 												 goto error;
 											 if (rcvbufstr) {
 												 unsigned int rcvbuf = strtoullm(rcvbufstr);
@@ -238,7 +238,7 @@ static VDECONN *vde_vxlan_open(char *sockname, char *descr,int interface_version
 											struct sockaddr_in bindaddr;
 											int loop = 0;
 
-											if ((multifd=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+											if ((multifd=socket(AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDP)) < 0)
 												goto error;
 											if (rcvbufstr) {
 												unsigned int rcvbuf = strtoullm(rcvbufstr);

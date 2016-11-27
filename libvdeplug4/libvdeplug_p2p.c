@@ -87,7 +87,7 @@ static VDECONN *vde_p2pf_open(char *given_sockname, char *descr,int interface_ve
 	UNUSED(port);
 
 	memset(&sockun, 0, sizeof(sockun));
-	if((fddata = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0)
+	if((fddata = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0)) < 0)
 		goto abort;
 	sockun.sun_family = AF_UNIX;
 	snprintf(sockun.sun_path, sizeof(sockun.sun_path)-1, "%s", given_sockname);
@@ -171,7 +171,7 @@ static VDECONN *vde_p2pm_open(char *given_sockname, char *descr,int interface_ve
 	memset(&sockout, 0, sizeof(sockun));
 	sockun.sun_family = AF_UNIX;
 	sockout.sun_family = AF_UNIX;
-	if((fddata = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0)
+	if((fddata = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0)) < 0)
 		goto abort;
 	snprintf(sockout.sun_path, sizeof(sockout.sun_path)-1, "%s", given_sockname);
 	res = connect(fddata, (struct sockaddr *) &sockout, sizeof(sockout));

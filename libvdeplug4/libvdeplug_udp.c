@@ -121,7 +121,7 @@ static VDECONN *vde_udp_open(char *in_sockname, char *descr,int interface_versio
 	}
 
 	for (rp = srcresult; rp != NULL; rp = rp->ai_next) {
-		fddata = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		fddata = socket(rp->ai_family, rp->ai_socktype | SOCK_CLOEXEC, rp->ai_protocol);
 		if (fddata == -1)
 			continue;
 
