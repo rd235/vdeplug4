@@ -490,7 +490,7 @@ error:
 static ssize_t vde_vxvde_recv(VDECONN *conn,void *buf,size_t len,int flags) {
 	struct vde_vxvde_conn *vde_conn = (struct vde_vxvde_conn *)conn;
 	struct epoll_event events[1];
-	int nfd = epoll_wait(vde_conn->pollfd, events, 1, 0);
+	int nfd = epoll_wait(vde_conn->pollfd, events, 1, -1);
 	if (nfd > 0) {
 		uint64_t vhdr64;
 		struct iovec iov[]={{&vhdr64, sizeof(vhdr64)},{buf, len}};
