@@ -18,11 +18,11 @@ Start several VM *on different hosts on the same LAN* (IP ttl must be 1).
 
 e.g. kvm:
 ```
-kvm .... -net nic,macaddr=52:54:00:11:22:11 -net vde,sock=vxvdex://
-kvm .... -net nic,macaddr=52:54:00:11:22:22 -net vde,sock=vxvdex://
-kvm .... -net nic,macaddr=52:54:00:11:22:33 -net vde,sock=vxvdex://
-kvm .... -net nic,macaddr=52:54:00:11:22:44 -net vde,sock=vxvdex://
-kvm .... -net nic,macaddr=52:54:00:11:22:55 -net vde,sock=vxvdex://
+kvm .... -net nic,macaddr=52:54:00:11:22:11 -net vde,sock=vxvde://
+kvm .... -net nic,macaddr=52:54:00:11:22:22 -net vde,sock=vxvde://
+kvm .... -net nic,macaddr=52:54:00:11:22:33 -net vde,sock=vxvde://
+kvm .... -net nic,macaddr=52:54:00:11:22:44 -net vde,sock=vxvde://
+kvm .... -net nic,macaddr=52:54:00:11:22:55 -net vde,sock=vxvde://
 ```
 
 All the VM will be automagically on the same Virtual LAN.
@@ -33,7 +33,7 @@ It is possible to connect the virtual newtork to a tuntap interface
 and manage in this way the routing towards real networks (maybe the Internet).
 The command (to run on any host on the LAN) is:
 ```
-$ sudo vde_plug vxvdex:// tap://mytap
+$ sudo vde_plug vxvde:// tap://mytap
 ```
 
 The tap can be defined on a remote host:
