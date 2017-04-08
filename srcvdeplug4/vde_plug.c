@@ -53,7 +53,6 @@ VDECONN *conn;
 VDECONN *conn2;
 VDESTREAM *vdestream;
 
-#define BUFSIZE 4096
 #define ETH_ALEN 6
 #define ETH_HDRLEN (ETH_ALEN+ETH_ALEN+2)
 
@@ -114,7 +113,7 @@ static void cleanup(void)
 	openclosepidfile(NULL);
 }
 
-unsigned char bufin[BUFSIZE];
+unsigned char bufin[VDE_ETHBUFSIZE];
 
 int plug2stream(void) {
 	register ssize_t nx;
@@ -141,7 +140,7 @@ int plug2stream(void) {
 			vdestream_recv(vdestream, bufin, nx);
 		}
 		if (pollv[1].revents & POLLIN) {
-			nx = vde_recv(conn,bufin,BUFSIZE-2,0);
+			nx = vde_recv(conn,bufin,VDE_ETHBUFSIZE,0);
 			if (__builtin_expect((nx >= ETH_HDRLEN),1))
 			{
 				vdestream_send(vdestream, bufin, nx);
@@ -197,7 +196,7 @@ int plug2plug(void)
 				(pollv[2].revents | pollv[3].revents) & POLLIN)
 			break;
 		if (pollv[0].revents & POLLIN) {
-			nx = vde_recv(conn, bufin, BUFSIZE,0);
+			nx = vde_recv(conn, bufin, VDE_ETHBUFSIZE,0);
 			if (__builtin_expect((nx >= ETH_HDRLEN),1)) {
 				vde_send(conn2, bufin, nx, 0);
 				/*fprintf(stderr,"0->1 %d ",nx);*/
@@ -205,7 +204,7 @@ int plug2plug(void)
 				break;
 		}
 		if (pollv[1].revents & POLLIN) {
-			nx = vde_recv(conn2,bufin,BUFSIZE,0);
+			nx = vde_recv(conn2,bufin,VDE_ETHBUFSIZE,0);
 			if (__builtin_expect((nx >= ETH_HDRLEN),1)) {
 				vde_send(conn, bufin, nx, 0);
 				/*fprintf(stderr,"1->0 %d ",nx);*/

@@ -27,7 +27,7 @@
 #include <sys/uio.h>
 #include <sys/types.h>
 
-#define MAXPACKET 2046
+#define MAXPACKET (VDE_ETHBUFSIZE + 2)
 #ifndef MIN
 #define MIN(X,Y) (((X)<(Y))?(X):(Y))
 #endif

@@ -21,6 +21,8 @@
 #define _VDELIB_H
 #include <sys/types.h>
 #define LIBVDEPLUG_INTERFACE_VERSION 1
+#define VDE_MAXMTU 9216
+#define VDE_ETHBUFSIZE (VDE_MAXMTU + 14 + 4) // + Ethernet header + 802.1Q header
 
 struct vdeconn;
 
