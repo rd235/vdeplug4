@@ -116,7 +116,6 @@ error:
 		pipe(fd);
 		dup2(fd[0], vde_conn->cmd_fd[0]);
 		dup2(fd[1], vde_conn->cmd_fd[1]);
-		vde_conn->cmd_fd[0] = vde_conn->cmd_fd[1] = -1;
 		waitpid(vde_conn->cmd_pid, &status, WNOHANG); /* discard exit status */
 		fprintf(stderr, "VDE terminated: cmd://%s\n",vde_conn->cmdstring);
 		return rv;
