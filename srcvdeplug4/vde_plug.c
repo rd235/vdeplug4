@@ -271,8 +271,8 @@ struct option long_options[] = {
 int main(int argc, char *argv[])
 {
 	char *progname = basename(argv[0]);
-	static char *sockname = NULL;
-	static char *sockname2 = NULL;
+	static char *vde_url = NULL;
+	static char *vde_url2 = NULL;
 	static char **cmdargv = NULL;
 	struct vde_open_args open_args = {.port = 0,.group = NULL,.mode = 0700};
 	struct vde_open_args open_args2 = {.port = 0,.group = NULL,.mode = 0700};
@@ -361,19 +361,19 @@ int main(int argc, char *argv[])
 
 	switch (argc) {
 		case 0: break;
-		case 1: sockname = *argv;
+		case 1: vde_url = *argv;
 						break;
 		case 2: if (strcmp(argv[0],"=") == 0)
 							cmdargv = argv+1;
 						else {
-							sockname = argv[0];
-							sockname2 = argv[1];
+							vde_url = argv[0];
+							vde_url2 = argv[1];
 						}
 						break;
 		default: if (strcmp(argv[0],"=") == 0)
 							 cmdargv = argv+1;
 						 else if (strcmp(argv[1],"=") == 0) {
-							 sockname = argv[0];
+							 vde_url = argv[0];
 							 cmdargv = argv+2;
 						 } else
 							 usage_and_exit(progname); //implies exit
@@ -393,15 +393,15 @@ int main(int argc, char *argv[])
 	atexit(cleanup);
 	setsighandlers(cleanup);
 
-	conn = vde_open(sockname,"vde_plug:",&open_args);
+	conn = vde_open(vde_url,"vde_plug:",&open_args);
 	if (conn == NULL) {
-		fprintf(stderr,"vde_open %s: %s\n",sockname && *sockname ? sockname : "default switch", strerror(errno));
+		fprintf(stderr,"vde_open %s: %s\n",vde_url && *vde_url ? vde_url : "default switch", strerror(errno));
 		exit(1);
 	}
-	if (sockname2 != NULL) {
-		conn2 = vde_open(sockname2,"vde_plug:",&open_args2);
+	if (vde_url2 != NULL) {
+		conn2 = vde_open(vde_url2,"vde_plug:",&open_args2);
 		if (conn2 == NULL) {
-			fprintf(stderr,"vde_open %s: %s\n",sockname2 && *sockname2 ? sockname2 : "default switch", strerror(errno));
+			fprintf(stderr,"vde_open %s: %s\n",vde_url2 && *vde_url2 ? vde_url2 : "default switch", strerror(errno));
 			exit(1);
 		}
 		return plug2plug();

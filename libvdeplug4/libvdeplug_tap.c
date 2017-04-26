@@ -29,7 +29,7 @@
 #include <net/if.h>
 #include <linux/if_tun.h>
 
-static VDECONN *vde_tap_open(char *given_sockname, char *descr,int interface_version,
+static VDECONN *vde_tap_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args);
 static ssize_t vde_tap_recv(VDECONN *conn,void *buf,size_t len,int flags);
 static ssize_t vde_tap_send(VDECONN *conn,const void *buf,size_t len,int flags);
@@ -51,7 +51,7 @@ struct vde_tap_conn {
 	int fddata;
 };
 
-static VDECONN *vde_tap_open(char *given_sockname, char *descr,int interface_version,
+static VDECONN *vde_tap_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args)
 {
 	struct ifreq ifr;
@@ -62,8 +62,8 @@ static VDECONN *vde_tap_open(char *given_sockname, char *descr,int interface_ver
 		goto abort;
 	memset(&ifr, 0, sizeof(ifr));
 	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
-	strncpy(ifr.ifr_name, given_sockname, sizeof(ifr.ifr_name) - 1);
-	//printf("tap dev=\"%s\", ifr.ifr_name=\"%s\"\n", ifr.ifr_name, given_sockname);
+	strncpy(ifr.ifr_name, given_vde_url, sizeof(ifr.ifr_name) - 1);
+	//printf("tap dev=\"%s\", ifr.ifr_name=\"%s\"\n", ifr.ifr_name, given_vde_url);
 	if(ioctl(fddata, TUNSETIFF, (void *) &ifr) < 0)
 		goto abort;
 

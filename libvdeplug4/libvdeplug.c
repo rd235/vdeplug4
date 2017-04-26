@@ -38,13 +38,17 @@
 
 #define DEFAULT_MODULE "libvdeplug_vde.so"
 
-VDECONN *vde_open_module(char *modname, char *sockname, char *descr,int interface_version,
+VDECONN *vde_open_module(char *modname, char *vde_url, char *descr,int interface_version,
 		    struct vde_open_args *open_args) {
 	void *handle=dlopen(modname, RTLD_NOW | RTLD_DEEPBIND);
+
 	if (handle) {
 		struct vdeplug_module *module=dlsym(handle,"vdeplug_ops");
 		if (module) {
-			VDECONN *rv = module->vde_open_real(sockname, descr, interface_version, open_args);
+			size_t vde_url_len = strlen(vde_url);
+			char vde_url_copy[vde_url_len+1];
+			strcpy(vde_url_copy, vde_url);
+			VDECONN *rv = module->vde_open_real(vde_url_copy, descr, interface_version, open_args);
 			if (rv) {
 				rv->handle = handle;
 				rv->module = module;
@@ -58,10 +62,10 @@ VDECONN *vde_open_module(char *modname, char *sockname, char *descr,int interfac
 	return NULL;
 }
 
-VDECONN *vde_open_real(char *given_sockname, char *descr,int interface_version,
+VDECONN *vde_open_real(char *given_vde_url, char *descr,int interface_version,
 		    struct vde_open_args *open_args)
 {
-	char std_sockname[PATH_MAX];
+	char std_vde_url[PATH_MAX];
 	struct stat statbuf;
 	char newdescr[MAXDESCR];
 	int descrlen;
@@ -70,8 +74,8 @@ VDECONN *vde_open_real(char *given_sockname, char *descr,int interface_version,
 	int pid = getpid();
 	char *tag;
 
-	if (given_sockname == NULL)
-		given_sockname = "";
+	if (given_vde_url == NULL)
+		given_vde_url = "";
 
 	callerpwd=getpwuid(getuid());
 
@@ -87,37 +91,37 @@ VDECONN *vde_open_real(char *given_sockname, char *descr,int interface_version,
 		if (endofip) *endofip=' ';
 	}
 
-	if (*given_sockname == '\0') {
+	if (*given_vde_url == '\0') {
 		char *homedir = getenv("HOME");
 		if (homedir) {
 			char *stdswitch;
 			if (asprintf(&stdswitch, "%s%s", homedir, STDSWITCH) >= 0) {
-				if (readlink(stdswitch,std_sockname,PATH_MAX) >= 0)
-					given_sockname=std_sockname;
+				if (readlink(stdswitch,std_vde_url,PATH_MAX) >= 0)
+					given_vde_url=std_vde_url;
 				free(stdswitch);
 			}
 		}
 	}
-	if (lstat(given_sockname,&statbuf) >= 0) {
+	if (lstat(given_vde_url,&statbuf) >= 0) {
 		if (S_ISREG(statbuf.st_mode)) {
-			FILE *f=fopen(given_sockname,"r");
+			FILE *f=fopen(given_vde_url,"r");
 			if (f != NULL) {
-				if (fgets(std_sockname,PATH_MAX,f) != NULL) {
-					std_sockname[strlen(std_sockname)-1] = 0;
-					given_sockname=std_sockname;
+				if (fgets(std_vde_url,PATH_MAX,f) != NULL) {
+					std_vde_url[strlen(std_vde_url)-1] = 0;
+					given_vde_url=std_vde_url;
 				}
 				fclose(f);
 			}
 		}
 	}
-	if (given_sockname == NULL || (tag=strstr(given_sockname,"://")) == NULL) {
-		return vde_open_module(DEFAULT_MODULE, given_sockname, newdescr,
+	if (given_vde_url == NULL || (tag=strstr(given_vde_url,"://")) == NULL) {
+		return vde_open_module(DEFAULT_MODULE, given_vde_url, newdescr,
 				interface_version, open_args);
 	} else {
-		int modlen=tag-given_sockname;
+		int modlen=tag-given_vde_url;
 		char modname[modlen+15];
-		snprintf(modname, modlen+15, "libvdeplug_%*.*s.so", modlen, modlen, given_sockname);
-		return vde_open_module(modname,given_sockname+(modlen+3),newdescr,
+		snprintf(modname, modlen+15, "libvdeplug_%*.*s.so", modlen, modlen, given_vde_url);
+		return vde_open_module(modname,given_vde_url+(modlen+3),newdescr,
 				                                            interface_version, open_args);
 	}
 }

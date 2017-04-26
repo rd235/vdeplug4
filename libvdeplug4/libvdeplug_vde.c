@@ -35,7 +35,7 @@
 #include "libvdeplug_mod.h"
 #include "canonicalize.h"
 
-static VDECONN *vde_vde_open(char *given_sockname, char *descr,int interface_version,
+static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args);
 static ssize_t vde_vde_recv(VDECONN *conn,void *buf,size_t len,int flags);
 static ssize_t vde_vde_send(VDECONN *conn,const void *buf,size_t len,int flags);
@@ -61,7 +61,7 @@ struct vde_vde_conn {
 
 /* Fallback names for the control socket, NULL-terminated array of absolute
  * filenames. */
-static char *fallback_sockname[] = {
+static char *fallback_vde_url[] = {
 	"/var/run/vde.ctl/ctl",
 	"/tmp/vde.ctl/ctl",
 	"/tmp/vde.ctl",
@@ -88,7 +88,7 @@ struct request_v3 {
 	char description[MAXDESCR];
 } __attribute__((packed));
 
-static VDECONN *vde_vde_open(char *given_sockname, char *descr,int interface_version,
+static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args)
 {
 	struct request_v3 req;
@@ -96,13 +96,13 @@ static VDECONN *vde_vde_open(char *given_sockname, char *descr,int interface_ver
 	char *portgroup=NULL;
 	char *group=NULL;
 	mode_t mode=0700;
-	char real_sockname[PATH_MAX];
+	char real_vde_url[PATH_MAX];
 	int fdctl=-1;
 	int fddata=-1;
 	struct sockaddr_un sockun;
 	struct sockaddr_un dataout;
 	char *split;
-	char *sockname=NULL;
+	char *vde_url=NULL;
 	int res;
 	int pid=getpid();
 	int sockno=0;
@@ -119,8 +119,8 @@ static VDECONN *vde_vde_open(char *given_sockname, char *descr,int interface_ver
 		}
 	}
 
-	if(*given_sockname && given_sockname[strlen(given_sockname)-1] == ']'
-			&& (split=rindex(given_sockname,'[')) != NULL) {
+	if(*given_vde_url && given_vde_url[strlen(given_vde_url)-1] == ']'
+			&& (split=rindex(given_vde_url,'[')) != NULL) {
 		*split=0;
 		split++;
 		port=atoi(split);
@@ -139,10 +139,10 @@ static VDECONN *vde_vde_open(char *given_sockname, char *descr,int interface_ver
 	 * switch (we don't know its cwd) for the data socket. Appending
 	 * given_sockname to getcwd() would be enough, but we could end up with a
 	 * name longer than PATH_MAX that couldn't be used as sun_path. */
-	if (*given_sockname &&
-			vde_realpath(given_sockname, real_sockname) == NULL)
+	if (*given_vde_url &&
+			vde_realpath(given_vde_url, real_vde_url) == NULL)
 		goto abort;
-	sockname=real_sockname;
+	vde_url=real_vde_url;
 
 	req.type = REQ_NEW_CONTROL;
 	strncpy(req.description, descr, MAXDESCR);
@@ -156,30 +156,30 @@ static VDECONN *vde_vde_open(char *given_sockname, char *descr,int interface_ver
 		goto abort;
 	sockun.sun_family = AF_UNIX;
 
-	/* If we're given a sockname, just try it (remember: sockname is the
-	 * canonicalized version of given_sockname - though we don't strictly need
-	 * the canonicalized versiono here). sockname should be the name of a
+	/* If we're given a vde_url, just try it (remember: vde_url is the
+	 * canonicalized version of given_vde_url - though we don't strictly need
+	 * the canonicalized versiono here). vde_url should be the name of a
 	 * *directory* which contains the control socket, named ctl. Older
 	 * versions of VDE used a socket instead of a directory (so an additional
 	 * attempt with %s instead of %s/ctl could be made), but they should
 	 * really not be used anymore. */
-	if (*given_sockname)
+	if (*given_vde_url)
 	{
 		if (portgroup)
-			snprintf(sockun.sun_path, sizeof(sockun.sun_path), "%s/%s", sockname, portgroup);
+			snprintf(sockun.sun_path, sizeof(sockun.sun_path), "%s/%s", vde_url, portgroup);
 		else
-			snprintf(sockun.sun_path, sizeof(sockun.sun_path), "%s/ctl", sockname);
+			snprintf(sockun.sun_path, sizeof(sockun.sun_path), "%s/ctl", vde_url);
 		res = connect(fdctl, (struct sockaddr *) &sockun, sizeof(sockun));
 	}
-	/* Else try all the fallback socknames, one by one */
+	/* Else try all the fallback vde_url, one by one */
 	else
 	{
 		int i;
-		for (i = 0, res = -1; fallback_sockname[i] && (res != 0); i++)
+		for (i = 0, res = -1; fallback_vde_url[i] && (res != 0); i++)
 		{
-			/* Remember sockname for the data socket directory */
-			sockname = fallback_sockname[i];
-			snprintf(sockun.sun_path, sizeof(sockun.sun_path), "%s", sockname);
+			/* Remember vde_url for the data socket directory */
+			vde_url = fallback_vde_url[i];
+			snprintf(sockun.sun_path, sizeof(sockun.sun_path), "%s", vde_url);
 			res = connect(fdctl, (struct sockaddr *) &sockun, sizeof(sockun));
 		}
 	}
@@ -195,8 +195,8 @@ static VDECONN *vde_vde_open(char *given_sockname, char *descr,int interface_ver
 	memset(req.sock.sun_path, 0, sizeof(req.sock.sun_path));
 	do
 	{
-		/* Here sockname is the last successful one in the previous step. */
-		sprintf(req.sock.sun_path, "%s/.%05d-%05d", sockname, pid, sockno++);
+		/* Here vde_url is the last successful one in the previous step. */
+		snprintf(req.sock.sun_path, sizeof(sockun.sun_path), "%s/.%05d-%05d", vde_url, pid, sockno++);
 		res=bind(fddata, (struct sockaddr *) &req.sock, sizeof (req.sock));
 	}
 	while (res < 0 && errno == EADDRINUSE);
@@ -267,7 +267,7 @@ static VDECONN *vde_vde_open(char *given_sockname, char *descr,int interface_ver
 	if ((newconn=calloc(1,sizeof(struct vde_vde_conn)))==NULL)
 	{
 		errno=ENOMEM;
-		goto abort;
+		goto abort_deletesock;
 	}
 
 	newconn->fdctl=fdctl;

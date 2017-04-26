@@ -36,7 +36,7 @@
 #include <execs.h>
 #include "libvdeplug_mod.h"
 
-static VDECONN *vde_cmd_open(char *given_sockname, char *descr,int interface_version,
+static VDECONN *vde_cmd_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args);
 static ssize_t vde_cmd_recv(VDECONN *conn,void *buf,size_t len,int flags);
 static ssize_t vde_cmd_send(VDECONN *conn,const void *buf,size_t len,int flags);

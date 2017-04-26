@@ -66,7 +66,7 @@ struct vxlan_hdr {
 	unsigned char priv2[1];
 };
 
-static VDECONN *vde_vxlan_open(char *given_sockname, char *descr,int interface_version,
+static VDECONN *vde_vxlan_open(char *given_vde_url, char *descr,int interface_version,
 		    struct vde_open_args *open_args);
 static ssize_t vde_vxlan_recv(VDECONN *conn,void *buf,size_t len,int flags);
 static ssize_t vde_vxlan_send(VDECONN *conn,const void *buf,size_t len,int flags);
@@ -122,7 +122,7 @@ static inline void setport(void *sockaddr, in_port_t port)
 	}
 }
 
-static VDECONN *vde_vxlan_open(char *sockname, char *descr,int interface_version,
+static VDECONN *vde_vxlan_open(char *vde_url, char *descr,int interface_version,
 		        struct vde_open_args *open_args)
 {
 	struct vde_vxlan_conn *newconn;
@@ -165,16 +165,16 @@ static VDECONN *vde_vxlan_open(char *sockname, char *descr,int interface_version
 	}
 	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
 	hints.ai_protocol = 0;          /* Any protocol */
-	if (vde_parseparms(sockname, parms) != 0)
+	if (vde_parseparms(vde_url, parms) != 0)
 		return NULL;
 	ttl = atoi(ttlstr);
 
-	if (*sockname == 0)
-		sockname = v6str != NULL ? DEFADDRV6 : DEFADDRV4;
+	if (*vde_url == 0)
+		vde_url = v6str != NULL ? DEFADDRV6 : DEFADDRV4;
 	if (ifstr != NULL)
 		ifindex = if_nametoindex(ifstr);
 
-	s = getaddrinfo(sockname, portstr, &hints, &result);
+	s = getaddrinfo(vde_url, portstr, &hints, &result);
 	if (s < 0) {
 		fprintf(stderr, "vxlan getaddrinfo: %s\n", gai_strerror(s));
 		errno=ENOENT;

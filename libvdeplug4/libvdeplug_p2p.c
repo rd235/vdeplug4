@@ -33,7 +33,7 @@
 #include "libvdeplug_mod.h"
 #include "canonicalize.h"
 
-static VDECONN *vde_p2p_open(char *given_sockname, char *descr,int interface_version,
+static VDECONN *vde_p2p_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args);
 static ssize_t vde_p2p_recv(VDECONN *conn,void *buf,size_t len,int flags);
 static ssize_t vde_p2p_send(VDECONN *conn,const void *buf,size_t len,int flags);
@@ -60,7 +60,7 @@ struct vde_p2p_conn {
 
 #define UNUSED(X) ({(void *)((intptr_t)(X));})
 
-static VDECONN *vde_p2pf_open(char *given_sockname, char *descr,int interface_version,
+static VDECONN *vde_p2pf_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args)
 {
 	int port=0;
@@ -90,7 +90,7 @@ static VDECONN *vde_p2pf_open(char *given_sockname, char *descr,int interface_ve
 	if((fddata = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0)) < 0)
 		goto abort;
 	sockun.sun_family = AF_UNIX;
-	snprintf(sockun.sun_path, sizeof(sockun.sun_path)-1, "%s", given_sockname);
+	snprintf(sockun.sun_path, sizeof(sockun.sun_path)-1, "%s", given_vde_url);
 	/* the socket already exists */
 	if(stat(sockun.sun_path,&sockstat) == 0) {
 		if (S_ISSOCK(sockstat.st_mode)) {
@@ -109,7 +109,7 @@ static VDECONN *vde_p2pf_open(char *given_sockname, char *descr,int interface_ve
 		goto abort;
 	memset(&sockout, 0, sizeof(sockun));
 	sockout.sun_family = AF_UNIX;
-	snprintf(sockout.sun_path, sizeof(sockun.sun_path), "%s+", given_sockname);
+	snprintf(sockout.sun_path, sizeof(sockun.sun_path), "%s+", given_vde_url);
 	if (group) {
 		struct group *gs;
 		gid_t gid;
@@ -141,7 +141,7 @@ abort:
 	return NULL;
 }
 
-static VDECONN *vde_p2pm_open(char *given_sockname, char *descr,int interface_version,
+static VDECONN *vde_p2pm_open(char *given_vde_url, char *descr,int interface_version,
 		    struct vde_open_args *open_args)
 {
 	int port=0;
@@ -173,11 +173,11 @@ static VDECONN *vde_p2pm_open(char *given_sockname, char *descr,int interface_ve
 	sockout.sun_family = AF_UNIX;
 	if((fddata = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0)) < 0)
 		goto abort;
-	snprintf(sockout.sun_path, sizeof(sockout.sun_path)-1, "%s", given_sockname);
+	snprintf(sockout.sun_path, sizeof(sockout.sun_path)-1, "%s", given_vde_url);
 	res = connect(fddata, (struct sockaddr *) &sockout, sizeof(sockout));
 	if (res < 0)
 		goto abort;
-	snprintf(sockun.sun_path, sizeof(sockun.sun_path)-1, "%s+", given_sockname);
+	snprintf(sockun.sun_path, sizeof(sockun.sun_path)-1, "%s+", given_vde_url);
 	/* the socket already exists */
 	if(stat(sockun.sun_path,&sockstat) == 0) {
 		if (S_ISSOCK(sockstat.st_mode)) {
@@ -225,14 +225,14 @@ abort:
 	return NULL;
 }
 
-static VDECONN *vde_p2p_open(char *given_sockname, char *descr,int interface_version,
+static VDECONN *vde_p2p_open(char *given_vde_url, char *descr,int interface_version,
 		    struct vde_open_args *open_args)
 {
 	VDECONN *rv;
-	if (*given_sockname) given_sockname--;
-	rv=vde_p2pf_open(given_sockname, descr, interface_version, open_args);
+	if (*given_vde_url) given_vde_url--;
+	rv=vde_p2pf_open(given_vde_url, descr, interface_version, open_args);
 	if (!rv)
-		rv=vde_p2pm_open(given_sockname, descr, interface_version, open_args);
+		rv=vde_p2pm_open(given_vde_url, descr, interface_version, open_args);
 	return rv;
 }
 

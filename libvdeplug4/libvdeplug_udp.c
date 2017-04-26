@@ -34,7 +34,7 @@
 #include "libvdeplug_mod.h"
 #include "canonicalize.h"
 
-static VDECONN *vde_udp_open(char *given_sockname, char *descr,int interface_version,
+static VDECONN *vde_udp_open(char *vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args);
 static ssize_t vde_udp_recv(VDECONN *conn,void *buf,size_t len,int flags);
 static ssize_t vde_udp_send(VDECONN *conn,const void *buf,size_t len,int flags);
@@ -58,7 +58,7 @@ struct vde_udp_conn {
 	size_t outlen;
 };
 
-static VDECONN *vde_udp_open(char *in_sockname, char *descr,int interface_version,
+static VDECONN *vde_udp_open(char *vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args)
 {
 	int fddata=-1;
@@ -67,16 +67,14 @@ static VDECONN *vde_udp_open(char *in_sockname, char *descr,int interface_versio
 	struct addrinfo *dstresult=NULL;
 	struct addrinfo *rp;
 	int s;
-	char given_sockname[strlen(in_sockname)+1];
 	char *dst;
-	char *src=given_sockname;
+	char *src=vde_url;
 	char *srcport;
 	char *dstport;
 	struct vde_udp_conn *newconn;
-	strcpy(given_sockname,in_sockname);
-	dst=strstr(given_sockname,"->");
 
-	//printf("%s\n",given_sockname);
+	dst=strstr(vde_url,"->");
+	//printf("%s\n",vde_url);
 
 	if (dst == NULL)
 		return NULL;
