@@ -1,0 +1,31 @@
+.TH LIBVDEPLUG_NULL 1 "April 30, 2017" "Virtual Distributed Ethernet"
+.SH NAME
+libvdeplug_null - network terminator plug
+.SH SYNOPSIS
+libvdeplug_null.so
+.SH DESCRIPTION
+This is a libvdeplug module implementing a networking sink/terminator.
+
+This module of libvdeplug4 can be used in any program supporting vde like
+\fBvde_plug\fR, \fBkvm\fR, \fBqemu\fR, \fBuser-mode-linux\fR and \fBvirtualbox\fR.
+
+The vde_plug_url syntax of this module is the following:
+.RS
+.B null://
+.br
+.RE
+
+This plug does not generate any networking traffic and all the packets sent to this plug get dropped.
+
+.SH EXAMPLES
+This command creates a switch (without the null plug the command vde_plug adds the stream stdin/stdout
+as a node of the switch).
+.B vde_plug null:// switch://tmp/myswitch
+.br
+.SH NOTICE
+Virtual Distributed Ethernet is not related in any way with
+www.vde.com ("Verband der Elektrotechnik, Elektronik und Informationstechnik"
+i.e. the German "Association for Electrical, Electronic & Information
+Technologies").
+.SH SEE ALSO
+\fBvde_plug\fP(1),

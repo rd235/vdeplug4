@@ -1,0 +1,70 @@
+.TH LIBVDEPLUG_SWITCH 1 "April 30, 2017" "Virtual Distributed Ethernet"
+.SH NAME
+libvdeplug_switch - multiplexing vdeplug module: switch
+.SH SYNOPSIS
+libvdeplug_switch.so
+.SH DESCRIPTION
+This is a libvdeplug multiplex module implementing a vde switch.
+
+This module of libvdeplug4 can be used in any program supporting vde like
+\fBvde_plug\fR, \fBkvm\fR, \fBqemu\fR, \fBuser-mode-linux\fR and \fBvirtualbox\fR.
+
+The vde_plug_url syntax of this module is the following:
+.RS
+\fBswitch://\fR[\fIpath\fR]
+.br
+\fBswitch://\fR[\fIpath\fR]\fB[\fR[\fIOPTION\fR][\fB/\fIOPTION\fR][\fB/\fIOPTION\fR]...\fB]\fR
+.br
+.RE
+
+If \fIpath\fR is omitted the path of the switch is /tmp/vdenode_$USERNAME (e.g. /tmp/vdenode_john
+if the username is john).
+
+This switch supports 801.1Q vlan as a trunk switch, i.e. all the VLAN tagged packets are forwarded as
+such. The forwarding table uses a key including both the MAC address and th VLAN id.
+
+.SH OPTIONS
+.TP
+\fBhashsize=\fR\fINUM
+set the size of the forwarding hash table. (default value 256)
+.TP
+\fBexpiretime=\fR\fISECONDS
+set the expire time of the forwarding table entries. (default value 120)
+.TP
+\fBhashseed=\fR\fINUM
+set a hash seed, in case the hash function generates too many collisions.
+.TP
+\fBmode=\fR\fIMODE
+define the permissions for the switch (see chmod). MODE is an octal number.
+The standard permission mask is: 0600 (only processes owning to the same user can join the network).
+.TP
+\fBdirmode=\fR\fIDIRMODE
+define the permissions for the switch control directory(see chmod). MODE is an octal number.
+If omitted, is computed from mode.
+.TP
+\fBgrp=\fR\fIGROUP
+define the group ownership of the switch.
+.SH EXAMPLES
+.B switch:///tmp/switch
+.br
+Other virtual machines, namespaces or vde_plug can join this switch using \fBvde:///tmp/switch\fR or simply \fB/tmp/switch\fR
+.br
+.B switch:///tmp/switch[mode=0666/hashsize=1024]
+.br
+It is the same switch, but everybody is allowed to connect their processes and the hash table has 1024 entries.
+.br
+The null plug can be used to create a stand-alone vde switch:
+.br
+.B vde_plug null:// switch:///tmp/myswitch
+.br
+The following command creates a switch connected to a tap virtual interface
+.br
+.B vde_plug tap://mytap switch:///tmp/myswitch
+
+.SH NOTICE
+Virtual Distributed Ethernet is not related in any way with
+www.vde.com ("Verband der Elektrotechnik, Elektronik und Informationstechnik"
+i.e. the German "Association for Electrical, Electronic & Information
+Technologies").
+.SH SEE ALSO
+\fBvde_plug\fP(1),

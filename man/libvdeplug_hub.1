@@ -1,0 +1,49 @@
+.TH LIBVDEPLUG_HUB 1 "April 30, 2017" "Virtual Distributed Ethernet"
+.SH NAME
+libvdeplug_hub - multiplexing vdeplug module: hub
+.SH SYNOPSIS
+libvdeplug_hub.so
+.SH DESCRIPTION
+This is a libvdeplug multiplex module implementing a virtual networking hub.
+
+This module of libvdeplug4 can be used in any program supporting vde like
+\fBvde_plug\fR, \fBkvm\fR, \fBqemu\fR, \fBuser-mode-linux\fR and \fBvirtualbox\fR.
+
+The vde_plug_url syntax of this module is the following:
+.RS
+.B hub://\fR[\fIpath\fR]
+.br
+.B hub://\fR[\fIpath\fR]\fB[\fR[\fIOPTION\fR][\fB/\fIOPTION\fR][\fB/\fIOPTION\fR]...\fB]
+.br
+.RE
+
+If \fIpath\fR is omitted the path of the hub is /tmp/vdenode_$USERNAME (e.g. /tmp/vdenode_john
+if the username is john).
+
+.SH OPTIONS
+.TP
+\fBmode=\fR\fIMODE
+define the permissions for the hub (see chmod). MODE is an octal number.
+The standard permission mask is: 0600 (only processes owning to the same user can join the network).
+.TP
+\fBdirmode=\fR\fIDIRMODE
+define the permissions for the hub control directory(see chmod). MODE is an octal number.
+If omitted, is computed from mode.
+.TP
+\fBgrp=\fR\fIGROUP
+define the group ownership of the hub.
+.SH EXAMPLES
+.B hub:///tmp/hub
+.br
+Other virtual machines, namespaces or vde_plug can join this hub using \fBvde:///tmp/hub\fR or simply \fB/tmp/hub\fR
+.br
+.B hub:///tmp/hub[mode=0666]
+.br
+It is the same hub, but everybody is allowed to connect their processes.
+.SH NOTICE
+Virtual Distributed Ethernet is not related in any way with
+www.vde.com ("Verband der Elektrotechnik, Elektronik und Informationstechnik"
+i.e. the German "Association for Electrical, Electronic & Information
+Technologies").
+.SH SEE ALSO
+\fBvde_plug\fP(1),

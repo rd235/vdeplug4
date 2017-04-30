@@ -1,0 +1,63 @@
+.TH LIBVDEPLUG_MULTI 1 "April 30, 2017" "Virtual Distributed Ethernet"
+.SH NAME
+libvdeplug_multi - multiplexing vdeplug module: multilink
+.SH SYNOPSIS
+libvdeplug_multi.so
+.SH DESCRIPTION
+This is a libvdeplug multiplex module implementing a multilink.
+
+The common usage of this module is to support (usually temporary) multiple links between
+virtual machines or switches. This module can be used to implement hand-offs betweek links:
+a new link can be set-up and then the old one is closed.
+When both links are active, packets can be duplicated.
+
+This module of libvdeplug4 can be used in any program supporting vde like
+\fBvde_plug\fR, \fBkvm\fR, \fBqemu\fR, \fBuser-mode-linux\fR and \fBvirtualbox\fR.
+
+The vde_plug_url syntax of this module is the following:
+.RS
+.B multi://\fR[\fIpath\fR]
+.br
+.B multi://\fR[\fIpath\fR]\fB[\fR[\fIOPTION\fR][\fB/\fIOPTION\fR][\fB/\fIOPTION\fR]...\fB]
+.br
+.RE
+
+If \fIpath\fR is omitted the path of the multi is /tmp/vdenode_$USERNAME (e.g. /tmp/vdenode_john
+if the username is john).
+
+.SH OPTIONS
+.TP
+\fBmode=\fR\fIMODE
+define the permissions for the multilink (see chmod). MODE is an octal number.
+The standard permission mask is: 0600 (only processes owning to the same user can join the network).
+.TP
+\fBdirmode=\fR\fIDIRMODE
+define the permissions for the multilink control directory(see chmod). MODE is an octal number.
+If omitted, is computed from mode.
+.TP
+\fBgrp=\fR\fIGROUP
+define the group ownership of the multilink.
+.SH EXAMPLES
+.B multi:///tmp/multi
+.br
+Other virtual machines, namespaces or vde_plug can join this multilink using \fBvde:///tmp/hub\fR or simply \fB/tmp/hub\fR
+.br
+Given two virtual machines using \fBmulti:///tmp/vm1\fR and \fBmulti:///tmp/vm2\fR respectively, it is possible to 
+connect them using \fBvde_plug /tmp/vm1 /tmp/vm2\fR. If the second virtual machine is running on a remote hosts; 
+\fBip1.vm2.domain.org\fR and \fBip2.vm2.domain.org\fR are two ip addresses permitting to reach that remote host using
+different paths, the command \fBvde_plug /tmp/vm1 = ssh ip1.vm2.domain.org vde_plug /tmp/vm2\fR connects the two vms.
+In a second time is possible to run \fBvde_plug /tmp/vm1 = ssh ip2.vm2.domain.org vde_plug /tmp/vm2\fR to create another
+channel on the other path. When both connections are in place packets can arrive duplicated (the upper protocols can
+manage the problem). Then the process connecting the remotevm using \fBip1.vm2.domain.org\fR can be killed, completing
+in this way the (hiccup-less) handoff.
+.br
+.B multi:///tmp/multi[mode=0666]
+.br
+It is the same multilink, but everybody is allowed to connect their processes.
+.SH NOTICE
+Virtual Distributed Ethernet is not related in any way with
+www.vde.com ("Verband der Elektrotechnik, Elektronik und Informationstechnik"
+i.e. the German "Association for Electrical, Electronic & Information
+Technologies").
+.SH SEE ALSO
+\fBvde_plug\fP(1),

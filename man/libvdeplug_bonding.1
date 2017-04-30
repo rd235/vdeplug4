@@ -1,0 +1,60 @@
+.TH LIBVDEPLUG_BONDING 1 "April 30, 2017" "Virtual Distributed Ethernet"
+.SH NAME
+libvdeplug_bonding - multiplexing vdeplug module: bonding links
+.SH SYNOPSIS
+libvdeplug_bonding.so
+.SH DESCRIPTION
+This is a libvdeplug multiplex module implementing the bonding of multiple links.
+
+The common usage of this module is to support multiple links between virtual machines or switches. 
+This module transmit packets on all the available links in a round-robin manner.
+If the links use several pathes and channels it is possible to reach a higher bandwidth.  
+
+This module of libvdeplug4 can be used in any program supporting vde like
+\fBvde_plug\fR, \fBkvm\fR, \fBqemu\fR, \fBuser-mode-linux\fR and \fBvirtualbox\fR.
+
+The vde_plug_url syntax of this module is the following:
+.RS
+.B bonding://\fR[\fIpath\fR]
+.br
+.B bonding://\fR[\fIpath\fR]\fB[\fR[\fIOPTION\fR][\fB/\fIOPTION\fR][\fB/\fIOPTION\fR]...\fB]
+.br
+.RE
+
+If \fIpath\fR is omitted the path of the bonding is /tmp/vdenode_$USERNAME (e.g. /tmp/vdenode_john
+if the username is john).
+
+.SH OPTIONS
+.TP
+\fBmode=\fR\fIMODE
+define the permissions for the bonding node (see chmod). MODE is an octal number.
+The standard permission mask is: 0600 (only processes owning to the same user can join the network).
+.TP
+\fBdirmode=\fR\fIDIRMODE
+define the permissions for the bonding node control directory(see chmod). MODE is an octal number.
+If omitted, is computed from mode.
+.TP
+\fBgrp=\fR\fIGROUP
+define the group ownership of the bonding node.
+.SH EXAMPLES
+.B bonding:///tmp/bonding
+.br
+Other virtual machines, namespaces or vde_plug can join this bondinglink using \fBvde:///tmp/hub\fR or simply \fB/tmp/hub\fR
+.br
+Given two virtual machines using \fBbonding:///tmp/vm1\fR and \fBbonding:///tmp/vm2\fR respectively, it is possible to 
+connect them using \fBvde_plug /tmp/vm1 /tmp/vm2\fR. If the second virtual machine is running on a remote hosts; 
+\fBip1.vm2.domain.org\fR and \fBip2.vm2.domain.org\fR are two ip addresses permitting to reach that remote host using
+different paths, the commands \fBvde_plug /tmp/vm1 = ssh ip1.vm2.domain.org vde_plug /tmp/vm2\fR 
+and \fBvde_plug /tmp/vm1 = ssh ip2.vm2.domain.org vde_plug /tmp/vm2\fR create two channels between the two virtual machines.
+Packets are sent in turns on one or the other link.
+.br
+.B bonding:///tmp/bonding[mode=0666]
+.br
+It is the same bondinglink, but everybody is allowed to connect their processes.
+.SH NOTICE
+Virtual Distributed Ethernet is not related in any way with
+www.vde.com ("Verband der Elektrotechnik, Elektronik und Informationstechnik"
+i.e. the German "Association for Electrical, Electronic & Information
+Technologies").
+.SH SEE ALSO
+\fBvde_plug\fP(1),
