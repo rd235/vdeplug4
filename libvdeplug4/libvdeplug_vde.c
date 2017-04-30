@@ -55,7 +55,6 @@ struct vde_vde_conn {
 	struct vdeplug_module *module;
 	int fdctl;
 	int fddata;
-	char *inpath;
 };
 
 /* Fallback names for the control socket, NULL-terminated array of absolute
@@ -270,7 +269,7 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 
 	newconn->fdctl=fdctl;
 	newconn->fddata=fddata;
-	newconn->inpath=strdup(req.sock.sun_path);
+	unlink(req.sock.sun_path);
 
 	return (VDECONN *)newconn;
 
@@ -309,10 +308,6 @@ static int vde_vde_ctlfd(VDECONN *conn)
 static int vde_vde_close(VDECONN *conn)
 {
 	struct vde_vde_conn *vde_conn = (struct vde_vde_conn *)conn;
-	if (vde_conn->inpath != NULL) {
-		unlink(vde_conn->inpath);
-		free(vde_conn->inpath);
-	}
 	close(vde_conn->fddata);
 	close(vde_conn->fdctl);
 	free(vde_conn);
