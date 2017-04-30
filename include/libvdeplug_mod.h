@@ -30,6 +30,7 @@ struct vdeparms {
 };
 
 int vde_parseparms(char *str,struct vdeparms *parms);
+int vde_parsepathparms(char *str,struct vdeparms *parms);
 
 unsigned long long strtoullm(const char *numstr);
 

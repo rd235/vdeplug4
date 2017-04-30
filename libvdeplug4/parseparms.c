@@ -133,19 +133,44 @@ static char *strtokq_r(char *s, const char *delim, char **saveptr) {
 	return begin;
 }
 
-
 int vde_parseparms(char *str,struct vdeparms *parms){
 	if (*str != 0) {
-		str = strchr(str,'/');
-		if (str) {
-			char *sp;
-			char *elem;
-			do
-				*(str++)=0;
-			while (*str == '/');
-			for (; (elem = strtokq_r(str,"/",&sp)) != NULL ; str = NULL) {
-				char *eq = strchr(elem, '=');
-				int taglen=eq ? eq-elem : strlen(elem);
+		char *sp;
+		char *elem;
+		elem = strtokq_r(str,"/",&sp);
+		while((elem = strtokq_r(NULL,"/",&sp)) != NULL) {
+			char *eq = strchr(elem, '=');
+			int taglen=eq ? eq-elem : strlen(elem);
+			if (taglen > 0) {
+				struct vdeparms *scan;
+				for (scan = parms; scan->tag; scan++) {
+					if (strncmp(elem,scan->tag,taglen) == 0) {
+						*(scan->value)=eq ? eq+1 : "";
+						break;
+					}
+				}
+				if (scan->tag == NULL) {
+					fprintf(stderr,"unknwown key: %*.*s\n",taglen,taglen,elem);
+					errno = EINVAL;
+					return -1;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+int vde_parsepathparms(char *str,struct vdeparms *parms){
+	if (*str != 0) {
+		char *sp;
+		char *elem;
+		char *bracket;
+		elem = strtokq_r(str,"[",&sp);
+		for (bracket = strtokq_r(NULL,"]",&sp);
+				(elem = strtokq_r(bracket, "/", &sp)) != NULL; bracket = NULL) {
+			char *eq = strchr(elem, '=');
+			int taglen=eq ? eq-elem : strlen(elem);
+			if (taglen > 0) {
 				struct vdeparms *scan;
 				for (scan = parms; scan->tag; scan++) {
 					if (strncmp(elem,scan->tag,taglen) == 0) {
