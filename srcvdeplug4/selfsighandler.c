@@ -72,7 +72,6 @@ void setsighandlers(void (*cleanup)(void))
 	int i;
 	struct sigaction sa = {
 		.sa_handler = sig_handler,
-		.sa_sigaction = NULL,
 		.sa_flags = 0,
 		.sa_restorer = NULL};
 	sigfillset(&sa.sa_mask);
