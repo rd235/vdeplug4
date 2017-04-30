@@ -32,7 +32,6 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include "libvdeplug_mod.h"
-#include "canonicalize.h"
 
 static VDECONN *vde_udp_open(char *vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args);

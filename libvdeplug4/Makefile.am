@@ -2,7 +2,7 @@ lib_LTLIBRARIES = libvdeplug.la libvdeplug_mod.la libvdeplug_vde.la\
 												libvdeplug_p2p.la libvdeplug_tap.la libvdeplug_udp.la\
 												libvdeplug_vxlan.la libvdeplug_vxvde.la libvdeplug_cmd.la
 
-libvdeplug_mod_la_SOURCES = canonicalize.c parseparms.c
+libvdeplug_mod_la_SOURCES = parseparms.c
 libvdeplug_mod_la_LIBADD = -ldl
 libvdeplug_mod_la_LDFLAGS = $(AM_LDFLAGS) -version-number 4:0:0 -export-dynamic
 

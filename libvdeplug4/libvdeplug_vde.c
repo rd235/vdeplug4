@@ -33,7 +33,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "libvdeplug_mod.h"
-#include "canonicalize.h"
 
 static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args);
@@ -139,8 +138,7 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 	 * switch (we don't know its cwd) for the data socket. Appending
 	 * given_sockname to getcwd() would be enough, but we could end up with a
 	 * name longer than PATH_MAX that couldn't be used as sun_path. */
-	if (*given_vde_url &&
-			vde_realpath(given_vde_url, real_vde_url) == NULL)
+	if (*given_vde_url && realpath(given_vde_url, real_vde_url) == NULL)
 		goto abort;
 	vde_url=real_vde_url;
 

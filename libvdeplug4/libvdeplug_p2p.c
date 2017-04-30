@@ -31,7 +31,6 @@
 #include <sys/un.h>
 #include <sys/stat.h>
 #include "libvdeplug_mod.h"
-#include "canonicalize.h"
 
 static VDECONN *vde_p2p_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args);
