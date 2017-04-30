@@ -26,11 +26,11 @@ libvdeplug_udp_la_SOURCES = libvdeplug_udp.c
 libvdeplug_udp_la_LIBADD = -lvdeplug_mod
 libvdeplug_udp_la_LDFLAGS = -module -avoid-version
 
-libvdeplug_vxlan_la_SOURCES = libvdeplug_vxlan.c libvdeplug_vxhash.c
+libvdeplug_vxlan_la_SOURCES = libvdeplug_vxlan.c
 libvdeplug_vxlan_la_LIBADD = -lvdeplug_mod
 libvdeplug_vxlan_la_LDFLAGS = -module -avoid-version
 
-libvdeplug_vxvde_la_SOURCES = libvdeplug_vxvde.c libvdeplug_vxhash.c
+libvdeplug_vxvde_la_SOURCES = libvdeplug_vxvde.c
 libvdeplug_vxvde_la_LIBADD = -lvdeplug_mod
 libvdeplug_vxvde_la_LDFLAGS = -module -avoid-version
 

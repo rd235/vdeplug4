@@ -32,14 +32,13 @@
 #include <netdb.h>
 #include <time.h>
 #include "libvdeplug_mod.h"
-#include "libvdeplug_vxhash.h"
 
 #define DEFADDRV4 "239.0.0.1"
 #define DEFADDRV6 "ff05:56de::1"
 #define STDPORTSTR "4789"
 #define STDTTLSTR "1"
 #define STDVNISTR "1"
-#define STDHASHSIZE 1023
+#define STDHASHSIZE 1024
 #define STDEXPIRETIME 128
 
 #define ETH_ALEN 6
@@ -83,8 +82,7 @@ union sockaddr46 {
 struct vde_vxlan_conn {
 	void *handle;
 	struct vdeplug_module *module;
-	void *table;
-	int hash_mask; // hash table size - 1. This must be 2^n-1 
+	struct vde_hashtable *table;
 	int vni;
 	union sockaddr46 multiaddr;
 	in_port_t multiport;
@@ -129,6 +127,7 @@ static VDECONN *vde_vxlan_open(char *vde_url, char *descr,int interface_version,
 	struct addrinfo hints;
 	struct addrinfo *result,*rp;
 	int s;
+	unsigned int hashsize = STDHASHSIZE;
 	char *portstr = STDPORTSTR;
 	char *vnistr = STDVNISTR;
 	char *ttlstr = STDTTLSTR;
@@ -295,13 +294,19 @@ static VDECONN *vde_vxlan_open(char *vde_url, char *descr,int interface_version,
 		goto error;
 	}
 
-	if (hashsizestr != NULL) {
-		/* force to the next 2^n value */
-		unsigned int hashsize = (2 << (sizeof(hashsize) * 8 - __builtin_clz(atoi(hashsizestr) - 1) - 1));
-		newconn->hash_mask = hashsize == 0 ? STDHASHSIZE : hashsize -1;
-	} else
-		newconn->hash_mask=STDHASHSIZE;
-	newconn->table=vx_hash_init(multiaddr->sa_family, newconn->hash_mask);
+	if (hashsizestr != NULL) 
+		hashsize = atoi(hashsizestr);
+	switch (multiaddr->sa_family) {
+		case AF_INET6:
+			newconn->table = vde_hash_init(struct sockaddr_in6 , hashsize, 0);
+			break;
+		case AF_INET:
+			newconn->table = vde_hash_init(struct sockaddr_in , hashsize, 0);
+			break;
+		default:
+			newconn->table = NULL;
+			break;
+	}
 	newconn->vni=atoi(vnistr);
 	if (expiretimestr != NULL) {
 		newconn->expiretime = atoi(expiretimestr);
@@ -343,8 +348,7 @@ static ssize_t vde_vxlan_recv(VDECONN *conn,void *buf,size_t len,int flags) {
 			goto error;
 		/* VXLAN always sends packets to the multicast port */
 		setport(msg.msg_name, vde_conn->multiport);
-		vx_find_in_hash_update(vde_conn->table, vde_conn->hash_mask,
-				ehdr->src, 1, msg.msg_name, time(NULL));
+		vde_find_in_hash_update(vde_conn->table, ehdr->src, 1, msg.msg_name, time(NULL));
 		return retval;
 	}
 error:
@@ -366,8 +370,7 @@ static ssize_t vde_vxlan_send(VDECONN *conn,const void *buf, size_t len,int flag
 	if (len < ETH_HEADER_SIZE)
 		return len; // discard packets shorter than an ethernet header
 	if (IS_BROADCAST(ehdr->dest) || 
-			(destaddr=vx_find_in_hash(vde_conn->table, vde_conn->multiaddr.vx.sa_family,
-				vde_conn->hash_mask, ehdr->dest, 1, time(NULL)- vde_conn->expiretime)) == NULL)
+			(destaddr = vde_find_in_hash(vde_conn->table, ehdr->dest, 1, time(NULL)- vde_conn->expiretime)) == NULL)
 		/* MULTICAST */
 		msg.msg_name = &(vde_conn->multiaddr.vx);
 	else
@@ -399,7 +402,7 @@ static int vde_vxlan_ctlfd(VDECONN *conn) {
 static int vde_vxlan_close(VDECONN *conn) {
 	struct vde_vxlan_conn *vde_conn = (struct vde_vxlan_conn *)conn;
 	close(vde_conn->multifd);
-	vx_hash_fini(vde_conn->table);
+	vde_hash_fini(vde_conn->table);
 	free(vde_conn);
 	return 0;
 }

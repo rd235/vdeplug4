@@ -34,7 +34,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include "libvdeplug_mod.h"
-#include "libvdeplug_vxhash.h"
+
 /* two alternatives to check whether an ip addr is local:
 LOCALBIND: try to open and bind a socket to the same addr (any port), if it succeeds it is local!
 !LOCALBIND: use getifaddrs and look through the list */
@@ -50,7 +50,7 @@ LOCALBIND: try to open and bind a socket to the same addr (any port), if it succ
 #define STDPORTSTR "14789"
 #define STDTTLSTR "1"
 #define STDVNI 1
-#define STDHASHSIZE 1023
+#define STDHASHSIZE 1024
 #define STDEXPIRETIME 128
 
 #define ETH_ALEN 6
@@ -94,8 +94,7 @@ union sockaddr46 {
 struct vde_vxvde_conn {
 	void *handle;
 	struct vdeplug_module *module;
-	void *table;
-	unsigned int hash_mask; // hash table size - 1. This must be 2^n-1 
+	struct vde_hashtable *table;
 	union {
 		struct vxvde_hdr connhdr;
 		uint64_t connhdr64;
@@ -225,6 +224,7 @@ static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 	struct addrinfo hints;
 	struct addrinfo *result,*rp;
 	int s;
+	unsigned int hashsize = STDHASHSIZE;
 	char *portstr = STDPORTSTR;
 	char *vnistr = NULL;
 	char *grpstr = NULL;
@@ -453,13 +453,21 @@ static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 		goto error;
 	}
 
-	if (hashsizestr != NULL) {
-		/* force to the next 2^n value */
-		unsigned int hashsize = (2 << (sizeof(hashsize) * 8 - __builtin_clz(atoi(hashsizestr) - 1) - 1));
-		newconn->hash_mask = hashsize == 0 ? STDHASHSIZE : hashsize -1;
-	} else
-		newconn->hash_mask=STDHASHSIZE;
-	newconn->table=vx_hash_init(multiaddr->sa_family, newconn->hash_mask);
+	if (hashsizestr != NULL) 
+		hashsize = atoi(hashsizestr);
+
+	switch (multiaddr->sa_family) {
+		case AF_INET6:
+			newconn->table = vde_hash_init(struct sockaddr_in6 , hashsize, 0);
+			break;
+		case AF_INET:
+			newconn->table = vde_hash_init(struct sockaddr_in , hashsize, 0);
+			break;
+		default:
+			newconn->table = NULL;
+			break;
+	}
+
 	memset(&newconn->connhdr, 0, sizeof(struct vxvde_hdr));
 	newconn->connhdr.flags = (1 << 3);
 	hton24(newconn->connhdr.id, vni);
@@ -544,11 +552,11 @@ static ssize_t vde_vxvde_recv(VDECONN *conn,void *buf,size_t len,int flags) {
 												 }
 				}
 			}
-			vx_find_in_hash_update(vde_conn->table, vde_conn->hash_mask, ehdr->src, 1, msg.msg_name, time(NULL));
+			vde_find_in_hash_update(vde_conn->table, ehdr->src, 1, msg.msg_name, time(NULL));
 			return retval;
 		} else if (retval == 0) {
 			if (vhdr64 == vde_conn->connhdr64)
-				vx_hash_delete(vde_conn->table, vde_conn->hash_mask, msg.msg_name);
+				vde_hash_delete(vde_conn->table, msg.msg_name);
 		}
 	}
 error:
@@ -572,8 +580,7 @@ static ssize_t vde_vxvde_send(VDECONN *conn,const void *buf, size_t len,int flag
 		return len; // discard packets shorter than an ethernet header
 	if (__builtin_expect(
 				(IS_BROADCAST(ehdr->dest) ||
-				 (msg.msg_name=vx_find_in_hash(vde_conn->table, vde_conn->multiaddr.vx.sa_family,
-																			 vde_conn->hash_mask, ehdr->dest, 1, time(NULL) - vde_conn->expiretime)) == NULL),
+				 (msg.msg_name = vde_find_in_hash(vde_conn->table, ehdr->dest, 1, time(NULL)- vde_conn->expiretime)) == NULL),
 				0))	{
 		msg.msg_name=&(vde_conn->multiaddr.vx);
 		//printaddr("send multi",destaddr);
@@ -602,7 +609,7 @@ static int vde_vxvde_close(VDECONN *conn) {
 			&vde_conn->multiaddr.vx, fam2socklen(&vde_conn->multiaddr.vx));
 	close(vde_conn->unifd);
 	close(vde_conn->multifd);
-	vx_hash_fini(vde_conn->table);
+	vde_hash_fini(vde_conn->table);
 	free(vde_conn);
 	return 0;
 }
