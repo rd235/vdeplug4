@@ -333,7 +333,7 @@ static ssize_t vde_vxlan_recv(VDECONN *conn,void *buf,size_t len,int flags) {
 	struct iovec iov[]={{&vhdr, sizeof(vhdr)},{buf, len}};
 	struct msghdr msg;
 	struct sockaddr_in6 sender;
-	int retval;
+	ssize_t retval;
 	msg.msg_name=&sender;
 	msg.msg_namelen = fam2socklen(msg.msg_name);
 	msg.msg_iov=iov;
@@ -363,7 +363,7 @@ static ssize_t vde_vxlan_send(VDECONN *conn,const void *buf, size_t len,int flag
 	struct iovec iov[]={{&vhdr, sizeof(vhdr)},{(char *)buf, len}};
 	struct sockaddr *destaddr;
 	static struct msghdr msg;
-	int retval;
+	ssize_t retval;
 	msg.msg_iov=iov;
 	msg.msg_iovlen=2;
 	struct eth_hdr *ehdr=(struct eth_hdr *) buf;

@@ -512,7 +512,7 @@ static ssize_t vde_vxvde_recv(VDECONN *conn,void *buf,size_t len,int flags) {
 			.msg_control=cmsg,
 			.msg_controllen=sizeof(cmsg),
 			.msg_flags=0};
-		int retval=recvmsg(events[0].data.fd, &msg, 0)-sizeof(struct vxvde_hdr);
+		ssize_t retval=recvmsg(events[0].data.fd, &msg, 0)-sizeof(struct vxvde_hdr);
 		if (__builtin_expect((retval > ETH_HEADER_SIZE), 1)) {
 			struct eth_hdr *ehdr=(struct eth_hdr *) buf;
 			if (vhdr64 != vde_conn->connhdr64) {
@@ -568,7 +568,7 @@ error:
 static ssize_t vde_vxvde_send(VDECONN *conn,const void *buf, size_t len,int flags) {
 	struct vde_vxvde_conn *vde_conn = (struct vde_vxvde_conn *)conn;
 	struct eth_hdr *ehdr=(struct eth_hdr *) buf;
-	int retval;
+	ssize_t retval;
 	struct iovec iov[]={{&vde_conn->connhdr, sizeof(struct vxvde_hdr)},{(char *)buf, len}};
 	struct msghdr msg={   
 		.msg_iov=iov,
