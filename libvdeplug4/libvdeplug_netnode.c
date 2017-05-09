@@ -225,8 +225,9 @@ static int conn_in(char *path, int conn_fd) {
 	struct request_v3 *req=(struct request_v3 *)reqbuf;
 	int len;
 	len = read(conn_fd, reqbuf, REQBUFLEN);
+	/* backwards compatility: type can have embedded port# (type >> 8) */
 	if (len > 0 && req->magic == SWITCH_MAGIC && req->version == 3 &&
-			req->type == REQ_NEW_CONTROL) {
+			(req->type & 0xff) == REQ_NEW_CONTROL) {
 		int data_fd;
 		struct sockaddr_un sun;
 		sun.sun_family = AF_UNIX;
