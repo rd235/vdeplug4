@@ -1,6 +1,6 @@
 /*
  * libvdeplug - A library to connect to a VDE Switch.
- * Copyright (C) 2013-2016 Renzo Davoli, University of Bologna
+ * Copyright (C) 2013-2017 Renzo Davoli, University of Bologna
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -59,9 +59,8 @@ struct vde_vde_conn {
 
 /* Fallback names for the control socket, NULL-terminated array of absolute
  * filenames. */
-static char *fallback_vde_url[] = {
-	"/var/run/vde.ctl/ctl",
-	"/tmp/vde.ctl/ctl",
+static const char *fallback_vde_url[] = {
+	"/var/run/vde.ctl",
 	"/tmp/vde.ctl",
 	NULL,
 };
@@ -86,25 +85,47 @@ struct request_v3 {
 	char description[MAXDESCR];
 } __attribute__((packed));
 
+/* return value: -1=error; 0=portgroup socket okay; 1=connected to generic "ctl" port */
+static int try2connect(int fdctl, const char *url, char *portgroup, int port, struct sockaddr_un *ctlsock) {
+	int res = -1;
+
+	memset(ctlsock, 0, sizeof(*ctlsock));
+	ctlsock->sun_family = AF_UNIX;
+	if (portgroup) {
+		snprintf(ctlsock->sun_path, sizeof(ctlsock->sun_path), "%s/%s", url, portgroup);
+		res = connect(fdctl, (struct sockaddr *) ctlsock, sizeof(*ctlsock));
+	}
+	if (res < 0 || port != 0) {
+		snprintf(ctlsock->sun_path, sizeof(ctlsock->sun_path), "%s/ctl", url);
+		res = connect(fdctl, (struct sockaddr *) ctlsock, sizeof(*ctlsock));
+		if (res == 0) res = 1;
+	}
+	return res;
+}
+
 static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args)
 {
 	struct request_v3 req;
 	int port=0;
 	char *portgroup=NULL;
+	char str_lenofint = snprintf(NULL, 0, "%d ", INT_MIN); // # of char to store a int
+	char numeric_portgroup[str_lenofint];
 	char *group=NULL;
+	char *modestr=NULL;
 	mode_t mode=0700;
 	char real_vde_url[PATH_MAX];
 	int fdctl=-1;
 	int fddata=-1;
 	struct sockaddr_un sockun;
 	struct sockaddr_un dataout;
-	char *split;
-	char *vde_url=NULL;
+	const char *vde_url=NULL;
 	int res;
 	int pid=getpid();
 	int sockno=0;
 	struct vde_vde_conn *newconn;
+	struct vdeparms parms[] = {{"",&portgroup},{"port",&portgroup},{"portgroup",&portgroup},
+		{"group",&group},{"mode",&modestr},{NULL, NULL}};
 
 	if (open_args != NULL) {
 		if (interface_version == 1) {
@@ -117,21 +138,13 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 		}
 	}
 
-	if(*given_vde_url && given_vde_url[strlen(given_vde_url)-1] == ']'
-			&& (split=rindex(given_vde_url,'[')) != NULL) {
-		*split=0;
-		split++;
-		port=atoi(split);
-		if (port == 0) {
-			if (isdigit(*split))
-				req.type = REQ_NEW_PORT0;
-			else {
-				portgroup=split;
-				split[strlen(split)-1] = 0;
-			}
-		}
+	if (vde_parsepathparms(given_vde_url, parms) < 0) {
+		errno=EINVAL;
+		goto abort;
 	}
 
+	if (modestr) 
+		mode = strtol(modestr, NULL, 8);
 
 	/* Canonicalize the sockname: we need to send an absolute pathname to the
 	 * switch (we don't know its cwd) for the data socket. Appending
@@ -141,17 +154,25 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 		goto abort;
 	vde_url=real_vde_url;
 
-	req.type = REQ_NEW_CONTROL;
-	strncpy(req.description, descr, MAXDESCR);
-	memset(&sockun, 0, sizeof(sockun));
-	memset(&dataout, 0, sizeof(dataout));
+	/* if port is given as a open_arg, convert it to portgroup */
+	if ((portgroup == NULL || *portgroup == 0) && port != 0) {
+		snprintf(numeric_portgroup, str_lenofint, "%d", port < 0 ? 0 : port);
+		portgroup = numeric_portgroup;
+	} else if (portgroup != NULL && isdigit(*portgroup)) {
+	/* else if portgroup is a number, convert it to port (and override port) */
+		char *endptr;
+		int portgroup2port = strtol(portgroup, &endptr, 10);
+		if (*endptr == 0) {
+			port = portgroup2port;
+			if (port == 0) port = -1;
+		}
+	}
 
 	/* connection to a vde_switch */
 	if((fdctl = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0)) < 0)
 		goto abort;
 	if((fddata = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0)) < 0)
 		goto abort;
-	sockun.sun_family = AF_UNIX;
 
 	/* If we're given a vde_url, just try it (remember: vde_url is the
 	 * canonicalized version of given_vde_url - though we don't strictly need
@@ -161,23 +182,15 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 	 * attempt with %s instead of %s/ctl could be made), but they should
 	 * really not be used anymore. */
 	if (*given_vde_url)
-	{
-		if (portgroup)
-			snprintf(sockun.sun_path, sizeof(sockun.sun_path), "%s/%s", vde_url, portgroup);
-		else
-			snprintf(sockun.sun_path, sizeof(sockun.sun_path), "%s/ctl", vde_url);
-		res = connect(fdctl, (struct sockaddr *) &sockun, sizeof(sockun));
-	}
+		res = try2connect(fdctl, vde_url, portgroup, port, &sockun);
 	/* Else try all the fallback vde_url, one by one */
 	else
 	{
 		int i;
-		for (i = 0, res = -1; fallback_vde_url[i] && (res != 0); i++)
+		for (i = 0, res = -1; fallback_vde_url[i] && (res < 0); i++)
 		{
-			/* Remember vde_url for the data socket directory */
 			vde_url = fallback_vde_url[i];
-			snprintf(sockun.sun_path, sizeof(sockun.sun_path), "%s", vde_url);
-			res = connect(fdctl, (struct sockaddr *) &sockun, sizeof(sockun));
+			res = try2connect(fdctl, vde_url, portgroup, port, &sockun);
 		}
 	}
 
@@ -186,14 +199,22 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 
 	req.magic=SWITCH_MAGIC;
 	req.version=3;
-	req.type=req.type+(port << 8);
-	req.sock.sun_family=AF_UNIX;
+	req.type = REQ_NEW_CONTROL;
+	/* bw compatibility, port embedded on type if connected to ctl */
+	if (res > 0 && port != 0) {
+		if (port < 0) 
+			req.type = REQ_NEW_PORT0;
+		else
+			req.type=req.type+(port << 8);
+	}
+	strncpy(req.description, descr, MAXDESCR);
 
+	req.sock.sun_family=AF_UNIX;
 	memset(req.sock.sun_path, 0, sizeof(req.sock.sun_path));
 	do
 	{
 		/* Here vde_url is the last successful one in the previous step. */
-		snprintf(req.sock.sun_path, sizeof(sockun.sun_path), "%s/.%05d-%05d", vde_url, pid, sockno++);
+		snprintf(req.sock.sun_path, sizeof(req.sock.sun_path), "%s/.%05d-%05d", vde_url, pid, sockno++);
 		res=bind(fddata, (struct sockaddr *) &req.sock, sizeof (req.sock));
 	}
 	while (res < 0 && errno == EADDRINUSE);
@@ -203,7 +224,7 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 	if (res < 0)
 	{
 		int i;
-		for (i = 0, res = -1; fallback_dirname[i] && (res != 0); i++)
+		for (i = 0, res = -1, sockno = 0; fallback_dirname[i] && (res != 0); i++)
 		{
 			memset(req.sock.sun_path, 0, sizeof(req.sock.sun_path));
 			do
@@ -227,7 +248,7 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 		else
 			gid=gs->gr_gid;
 		if (chown(req.sock.sun_path,-1,gid) < 0)
-			goto abort;
+			goto abort_deletesock;
 	} else {
 		/* when group is not defined, set permission for the reverse channel */
 		struct stat ctlstat;
