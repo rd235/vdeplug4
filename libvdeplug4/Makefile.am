@@ -1,3 +1,5 @@
+SUBDIRS = libvdeplug2_legacy
+
 lib_LTLIBRARIES = libvdeplug.la libvdeplug_mod.la libvdeplug_vde.la\
 									libvdeplug_p2p.la libvdeplug_tap.la libvdeplug_udp.la\
 									libvdeplug_vxlan.la libvdeplug_vxvde.la libvdeplug_cmd.la \
@@ -60,10 +62,3 @@ libvdeplug_bonding_la_SOURCES = libvdeplug_bonding.c libvdeplug_netnode.c
 libvdeplug_bonding_la_LIBADD = -lvdeplug_mod
 libvdeplug_bonding_la_LDFLAGS = -module -avoid-version
 
-install-data-hook:
-	ln -sf libvdeplug.so.4 $(DESTDIR)$(libdir)/libvdeplug.so.3
-	ln -sf libvdeplug.so.4 $(DESTDIR)$(libdir)/libvdeplug.so.2
-
-uninstall-hook:
-	rm -f $(DESTDIR)$(libdir)/libvdeplug.so.3
-	rm -f $(DESTDIR)$(libdir)/libvdeplug.so.2

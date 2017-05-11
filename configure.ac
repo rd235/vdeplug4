@@ -30,6 +30,7 @@ AC_CHECK_FUNCS([strcmp])
 AC_OUTPUT(
 		[Makefile]
 		[libvdeplug4/Makefile]
+		[libvdeplug4/libvdeplug2_legacy/Makefile]
 		[srcvdeplug4/Makefile]
 		[include/Makefile]
 		[man/Makefile]
