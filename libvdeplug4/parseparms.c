@@ -179,9 +179,13 @@ int vde_parsepathparms(char *str,struct vdeparms *parms){
 					}
 				}
 				if (scan->tag == NULL) {
-					fprintf(stderr,"unknwown key: %*.*s\n",taglen,taglen,elem);
-					errno = EINVAL;
-					return -1;
+					if (eq == NULL && parms->tag != NULL && parms->tag[0] == 0)
+						*(parms->value) = elem;
+					else {
+						fprintf(stderr,"unknwown key: %*.*s\n",taglen,taglen,elem);
+						errno = EINVAL;
+						return -1;
+					}
 				}
 			}
 		}
@@ -189,17 +193,16 @@ int vde_parsepathparms(char *str,struct vdeparms *parms){
 	return 0;
 }
 
-
 #if 0
 int main(int argc, char *argv[]) {
 	char *portstr="12345";
 	char *vnistr="1";
 	char *ttlstr="1";
-	struct parms parms[] = {{"port",&portstr},{"vni",&vnistr},{"ttl",&ttlstr},{NULL, NULL}};
+	struct vdeparms parms[] = {{"port",&portstr},{"vni",&vnistr},{"ttl",&ttlstr},{NULL, NULL}};
 
-	parseparms(argv[1],parms);
+	vde_parseparms(argv[1],parms);
 
-	struct parms *scan;
+	struct vdeparms *scan;
 	for (scan = parms; scan->tag; scan++)
 		printf("%s %s\n",scan->tag,*(scan->value));
 }
