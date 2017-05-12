@@ -217,6 +217,22 @@ static inline void printaddr(char *msg, void *sockaddr)
 }
 #endif
 
+static int getbindaddr(const char *bindstr, int family, void *addr) {
+	int s;
+	struct addrinfo hints;
+	struct addrinfo *result;
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = family;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_PASSIVE;
+	s = getaddrinfo(bindstr, "0", &hints, &result);
+	if (s == 0) {
+		memcpy(addr, result->ai_addr, result->ai_addrlen);
+		freeaddrinfo(result);
+	}
+	return s;
+}
+
 static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args)
 {
@@ -235,6 +251,7 @@ static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 	char *hashsizestr = NULL;
 	char *expiretimestr = NULL;
 	char *ifstr = NULL;
+	char *bindstr = NULL;
 	struct vdeparms parms[] = {
 		{"port",&portstr},
 		{"vni",&vnistr},
@@ -246,6 +263,7 @@ static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 		{"hashsize",&hashsizestr},
 		{"expiretime",&expiretimestr},
 		{"if",&ifstr},
+		{"bind",&bindstr},
 		{NULL, NULL}};
 	struct sockaddr *multiaddr = NULL;
 	int multifd=-1;
@@ -332,10 +350,10 @@ static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 											 if ((setsockopt(multifd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
 															 &mc_req, sizeof(mc_req))) < 0)
 												 goto error;
-											 memset(&bindaddr, 0, sizeof(bindaddr));
-											 bindaddr.sin6_family      = AF_INET6;
-											 memcpy(&bindaddr.sin6_addr, &in6addr_any, sizeof(in6addr_any));
-											 bindaddr.sin6_port        = 0;
+											 if (getbindaddr(bindstr, AF_INET6, &bindaddr) != 0) {
+												 errno = ENOENT;
+												 goto error;
+											 }
 											 if ((bind(unifd, (struct sockaddr *) &bindaddr,
 															 sizeof(bindaddr))) < 0) {
 												 close(multifd);
@@ -401,10 +419,10 @@ static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 											if ((setsockopt(multifd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
 															&mc_req, sizeof(mc_req))) < 0)
 												goto error;
-											memset(&bindaddr, 0, sizeof(bindaddr));
-											bindaddr.sin_family      = AF_INET;
-											bindaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-											bindaddr.sin_port        = 0;
+											if (getbindaddr(bindstr, AF_INET, &bindaddr) != 0) {
+												errno = ENOENT;
+												goto error;
+											}
 											if ((bind(unifd, (struct sockaddr *) &bindaddr,
 															sizeof(bindaddr))) < 0) {
 												close(multifd);

@@ -66,7 +66,7 @@ struct vxlan_hdr {
 };
 
 static VDECONN *vde_vxlan_open(char *given_vde_url, char *descr,int interface_version,
-		    struct vde_open_args *open_args);
+		struct vde_open_args *open_args);
 static ssize_t vde_vxlan_recv(VDECONN *conn,void *buf,size_t len,int flags);
 static ssize_t vde_vxlan_send(VDECONN *conn,const void *buf,size_t len,int flags);
 static int vde_vxlan_datafd(VDECONN *conn);
@@ -121,7 +121,7 @@ static inline void setport(void *sockaddr, in_port_t port)
 }
 
 static VDECONN *vde_vxlan_open(char *vde_url, char *descr,int interface_version,
-		        struct vde_open_args *open_args)
+		struct vde_open_args *open_args)
 {
 	struct vde_vxlan_conn *newconn;
 	struct addrinfo hints;
@@ -180,7 +180,6 @@ static VDECONN *vde_vxlan_open(char *vde_url, char *descr,int interface_version,
 		return NULL;
 	}
 
-	/* TODO scan the list of results */
 	for (rp = result; rp != NULL && multifd < 0; rp = rp->ai_next) {
 		switch (rp->ai_family) {
 			case AF_INET6: {
