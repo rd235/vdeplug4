@@ -45,6 +45,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <ctype.h>
+#include <libgen.h>
 
 #include <libvdeplug.h>
 #include "libvdeplug_mod.h"
@@ -125,6 +126,7 @@ struct vde_netnode_conn {
 	char *path;
 	int epfd;
 	int ctl_fd;
+	mode_t mode;
 	uint64_t *porttab;
 	int porttablen, porttabmax;
 	struct vde_hashtable *hashtable;
@@ -187,6 +189,8 @@ static int datasock_open(char *path, gid_t gid, int mode, int dirmode) {
 		goto abort_mkdir;
 	if (gid >= 0 && chown(sun.sun_path, -1, gid) < 0)
 		goto abort_unlink;
+	if (mode > 0 && chmod(sun.sun_path, mode) < 0)
+		goto abort_unlink;
 	if (listen(connect_fd, 15) < 0)
 		goto abort_unlink;
 	return connect_fd;
@@ -220,7 +224,7 @@ static int ctl_in(char *path, int ctl_fd) {
 }
 
 /* open a new connection on an accepted connection*/
-static int conn_in(char *path, int conn_fd) {
+static int conn_in(char *path, int conn_fd, mode_t mode) {
 	char reqbuf[REQBUFLEN+1];
 	struct request_v3 *req=(struct request_v3 *)reqbuf;
 	int len;
@@ -236,6 +240,8 @@ static int conn_in(char *path, int conn_fd) {
 		snprintf(sun.sun_path,sizeof(sun.sun_path),"%s/fd%d",path,conn_fd);
 		unlink(sun.sun_path);
 		bind(data_fd, (struct sockaddr *) &sun, sizeof(sun));
+		if (mode > 0)
+			chmod(sun.sun_path, mode);
 		write(conn_fd, &sun, sizeof(sun));
 		return data_fd;
 	}
@@ -317,6 +323,13 @@ static VDECONN *vde_netnode_open(char *vde_url, char *descr,int interface_versio
 			snprintf(userpath, PATH_MAX, STDPATH "u%d", euid);
 		userpath[PATH_MAX-1] = 0;
 		path = userpath;
+	} else {
+		char *filename=basename(path);
+		char *dir=dirname(path);
+		if ((path = realpath(dir, userpath)) == NULL)
+			return NULL;
+		strncat(path, "/", PATH_MAX);
+		strncat(path, filename, PATH_MAX);
 	}
 
 	if (grpstr != NULL) {
@@ -355,6 +368,7 @@ static VDECONN *vde_netnode_open(char *vde_url, char *descr,int interface_versio
 	newconn->nettype=nettype;
 	newconn->epfd=epfd;
 	newconn->ctl_fd=ctl_fd;
+	newconn->mode=mode;
 	newconn->path=strdup(path);
 	newconn->porttab=NULL;
 	newconn->porttablen=newconn->porttabmax=0;
@@ -472,7 +486,7 @@ static ssize_t vde_netnode_recv(VDECONN *conn,void *buf,size_t len,int flags)
 		} else {
 			if (fd2 == vde_conn->ctl_fd) {
 				/* CONN_IN */
-				int data_fd = conn_in(vde_conn->path, fd);
+				int data_fd = conn_in(vde_conn->path, fd, vde_conn->mode);
 				if (data_fd >= 0) {
 					event.events = EPOLLIN;
 					event.data.u64 = dualint(data_fd, fd);
