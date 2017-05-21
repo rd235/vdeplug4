@@ -1,5 +1,5 @@
 /*
- * VDE - libvdeplug_vx modules 
+ * VDE - libvdeplug_vx modules
  * Copyright (C) 2016 Renzo Davoli VirtualSquare
  *
  * This library is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ struct vde_vxvde_conn {
 		uint64_t connhdr64;
 	};
 	union sockaddr46 multiaddr;
-	union sockaddr46 localaddr; 
+	union sockaddr46 localaddr;
 	in_port_t uniport;
 	int multifd;
 	int unifd;
@@ -204,14 +204,14 @@ static inline void printaddr(char *msg, void *sockaddr)
 	struct sockaddr_in6 *s6=sockaddr;
 	char saddr[INET6_ADDRSTRLEN];
 	switch (s->sa_family) {
-		case AF_INET: 
-			fprintf(stderr,"%s %s\n",msg,inet_ntop(AF_INET, &s4->sin_addr, saddr, sizeof(*s4)));     
+		case AF_INET:
+			fprintf(stderr,"%s %s\n",msg,inet_ntop(AF_INET, &s4->sin_addr, saddr, sizeof(*s4)));
 			break;
-		case AF_INET6: 
-			fprintf(stderr,"%s %s\n",msg,inet_ntop(AF_INET6, &s6->sin6_addr, saddr, sizeof(*s6)));     
+		case AF_INET6:
+			fprintf(stderr,"%s %s\n",msg,inet_ntop(AF_INET6, &s6->sin6_addr, saddr, sizeof(*s6)));
 			break;
 		default:
-			fprintf(stderr,"%s UNKNOWN FAMILY %d\n",msg,s->sa_family);     
+			fprintf(stderr,"%s UNKNOWN FAMILY %d\n",msg,s->sa_family);
 			break;
 	}
 }
@@ -344,7 +344,7 @@ static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 												 multifd=unifd=-1;
 												 continue;
 											 }
-											 memcpy(&mc_req.ipv6mr_multiaddr, &addr->sin6_addr, 
+											 memcpy(&mc_req.ipv6mr_multiaddr, &addr->sin6_addr,
 													 sizeof(addr->sin6_addr));
 											 mc_req.ipv6mr_interface = ifindex;
 											 if ((setsockopt(multifd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
@@ -392,21 +392,21 @@ static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 													goto error;
 											}
 											if ((setsockopt(unifd, IPPROTO_IP, IP_TTL,
-															&ttl, sizeof(ttl))) < 0) 
+															&ttl, sizeof(ttl))) < 0)
 												goto error;
 											if ((setsockopt(unifd, IPPROTO_IP, IP_MULTICAST_TTL,
-															&ttl, sizeof(ttl))) < 0) 
+															&ttl, sizeof(ttl))) < 0)
 												goto error;
 											if ((setsockopt(multifd, IPPROTO_IP, IP_PKTINFO,
 															&one, sizeof(one))) < 0)
 												goto error;
 #ifdef SO_REUSEADDR
 											if ((setsockopt(multifd, SOL_SOCKET, SO_REUSEADDR,
-															&one, sizeof(one))) < 0) 
+															&one, sizeof(one))) < 0)
 												goto error;
 #endif
 											grpsetaddr(grp, &addr->sin_addr, sizeof(addr->sin_addr));
-											if ((bind(multifd, (struct sockaddr *) addr, 
+											if ((bind(multifd, (struct sockaddr *) addr,
 															sizeof(*addr))) < 0) {
 												close(multifd);
 												close(unifd);
@@ -460,10 +460,10 @@ static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 		ev.events = EPOLLIN;
 		ev.data.fd = multifd;
 		if (epoll_ctl(pollfd, EPOLL_CTL_ADD, multifd, &ev) < 0)
-			goto error; 
+			goto error;
 		ev.data.fd = unifd;
 		if (epoll_ctl(pollfd, EPOLL_CTL_ADD, unifd, &ev) < 0)
-			goto error; 
+			goto error;
 	}
 
 	if ((newconn=calloc(1,sizeof(struct vde_vxvde_conn)))==NULL) {
@@ -471,7 +471,7 @@ static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 		goto error;
 	}
 
-	if (hashsizestr != NULL) 
+	if (hashsizestr != NULL)
 		hashsize = atoi(hashsizestr);
 
 	switch (multiaddr->sa_family) {
@@ -588,7 +588,7 @@ static ssize_t vde_vxvde_send(VDECONN *conn,const void *buf, size_t len,int flag
 	struct eth_hdr *ehdr=(struct eth_hdr *) buf;
 	ssize_t retval;
 	struct iovec iov[]={{&vde_conn->connhdr, sizeof(struct vxvde_hdr)},{(char *)buf, len}};
-	struct msghdr msg={   
+	struct msghdr msg={
 		.msg_iov=iov,
 		.msg_iovlen=2,
 		.msg_control = NULL,
