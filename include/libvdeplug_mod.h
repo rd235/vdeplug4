@@ -38,8 +38,8 @@ struct vde_hashtable;
 void *vde_find_in_hash(struct vde_hashtable *table, unsigned char *dst, int vlan, time_t too_old);
 void vde_find_in_hash_update(struct vde_hashtable *table, unsigned char *src, int vlan, void *payload, time_t now);
 void vde_hash_delete(struct vde_hashtable *table, void *payload);
-#define vde_hash_init(type, hash_mask, seed) _vde_hash_init(sizeof(type), (hash_mask), (seed))
-struct vde_hashtable *_vde_hash_init(size_t payload_size, unsigned int hash_mask, uint64_t seed);
+#define vde_hash_init(type, hashsize, seed) _vde_hash_init(sizeof(type), (hashsize), (seed))
+struct vde_hashtable *_vde_hash_init(size_t payload_size, unsigned int hashsize, uint64_t seed);
 void vde_hash_fini(struct vde_hashtable *table);
 
 unsigned long long strtoullm(const char *numstr);

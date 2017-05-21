@@ -34,4 +34,5 @@ AC_OUTPUT(
 		[srcvdeplug4/Makefile]
 		[include/Makefile]
 		[man/Makefile]
+		[doc/Makefile]
 		)

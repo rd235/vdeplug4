@@ -1,0 +1,175 @@
+HOW TO CREATE A VDEPLUG PLUGIN
+
+May 21, 2017
+
+Renzo Davoli
+
+This brief document is for developers who aim to add new VDE implementations.
+
+Vdeplug4 provides a library to implement new plugins: libvdeplug_mod.so:
+add:
+	#include <libvdeplug_mod.h>
+in your source files and link your objects with:
+	-l vdeplug_mod
+
+This library includes three main features:
+* The structure needed by libvdeplug to run the specific implementation
+functions
+* Functions to parse the options in vde_urls.
+* A generic hash table for Ethernet packet dispatching 
+plus some utility functions.
+
++++ struct vdeplug_module +++
+A plugin for vdeplug need:
+* to have a prefix "libvdeplug_" in its name. "libvdeplug_foo.so" will be
+loaded when a program uses a vde_url beginning by "foo://".
+Foo will be the name used in the following examples.
+* to export a non-static global variable named vdeplug_ops of type
+struct vdeplug_module.
+	struct vdeplug_module vdeplug_ops={
+		.vde_open_real=vde_foo_open,
+		.vde_recv=vde_foo_recv,
+		.vde_send=vde_foo_send,
+		.vde_datafd=vde_foo_datafd,
+		.vde_ctlfd=vde_foo_ctlfd,
+		.vde_close=vde_foo_close};
+
+vde_foo_open returns a pointer to a struct vdeconn. Actually each 
+module can cast struct vdeconn to an implementation specific structure
+provided the first two fields are preserved (i.e. all specific data
+will be stored in the unsized field named "data" of struct vdeconn).
+
+Please note that vde_foo_open receives a copy of the vde_url provided by the
+calling program. THe copy is allocated on the stack, so the value can be
+safely modified to parse the url but if the string (or part of of it) should be
+stored for a later retrieval the contents needs to be duplicated.  (do not
+store pointers addressing bytes of vde_url).
+
+vde_foo_recv, vde_foo_send, vde_foo_datafd, vde_foo_ctlfd, vde_foo_close are
+the implementation specific function corresponding to those described in
+libvdeplug(3) man page.
+
++++ vde_url arguments parsing +++
+
+libvdeplug_mod library provides two functions:
+  int vde_parseparms(char *str,struct vdeparms *parms);
+  int vde_parsepathparms(char *str,struct vdeparms *parms);
+The former has been designed for plug-ins which need IP addresses or
+fully qualified domain names as parameters.
+The latter is specific for plug-ins using pathnames.
+
+Using vde_parseparms it is possible to parse vde_urls like;
+	vxvde://
+	vxvde://239.0.0.1
+	vxvde://239.0.0.1/iface=eth0
+	vxvde://2001:760::1/iface=eth0
+	vxvde://239.0.0.1/ipv4/iface=eth0
+	vxvde://vde.mycompany.com/ipv4/iface=eth0
+
+arguments are separated by slashes and may or may not have values.
+
+Using vde_parsepathparms it is possible to parse vde_urls like;
+	vde://
+	vde:///tmp/vde.ctl
+	vde:///tmp/vde.ctl[2]
+	vde://[3]
+	vde:///var/run/grpsw[group=grp/port=2]
+arguments are provided within square brackets and separated by slashes.
+
+Both vde_parseparms and vde_parsepathparms require two arguments, the first is
+the string to be parsed, the second is an array of struct vdeparms.
+A struct vdeparms element is a pair tag, pointer to the value.
+When the tag matches, the value is stored using the pointer.
+The array must terminate with an empty element {NULL, NULL}.
+The return value for both functions is 0 in case of success, -1 in case of error.
+
+The examples here above of possible values parseable by vde_parseparms can be
+processed using the following code.
+
+	char *ipv4str = NULL;
+	char *ifacestr = "lo";
+	struct vdeparms parms[] = {
+		{"ipv4",&ipv4str},
+		{"iface",&ifacestr},
+		{NULL, NULL}};
+	...
+	if (vde_parseparms(vde_url,parms) < 0) 
+		.... error management
+	
+after vde_parseparms completion vde_url contains the IP address or fully qualified domain name
+without the options, ipv4str points to a NULL string (but it is not null) if "ipv4"
+is one of the url arguments, and if the argument "iface=eth0" is present ifacestr points to
+"eth0" (the seventh char of the argument itself). It is possible to assign default values.
+In the example above ifacestr is "lo" if no "iface=something" argument is present.
+Please note that each argument-key can occur just once (otherwise the second value overwrites 
+the first)
+
+The examples of vde_parsepathparms values can be processed using the following code:
+	char *portstr = "0";
+	char *groupstr = NULL;
+	struct vdeparms parms[] = {
+		{"",&port},
+		{"port",&portstr},
+		{"group",&groupstr},
+		{NULL, NULL}};
+	...
+	if (vde_parsepathparms(vde_url,parms) < 0)
+		.... error management
+
+after vde_parsepathparms completion vde_url contains the path only (without square brackets
+and arguments). Like vde_parseparms, portstr and groupstr point to the value after
+"port=" or "group=" arguments, respectively. 
+If the first struct vdeparms has an empty string as its key (only for vde_parsepathparms) it gets
+the arguments not matching any other key.
+It means in this case that:
+	vde:///tmp/vde.ctl[2]
+	vde:///tmp/vde.ctl[port=2]
+have the same meaning.
+
+Examples of arguments managements can be found in libvdeplug_*.so in the libvdeplug4
+of the source tree of vdeplug4.
+
++++ A generic hash table for Ethernet packet dispatching +++
+
+Given that VDE handles ethernet packets many plugins need a hash table to
+dispatch ethernet packets.
+
+The key of the dispatching table is the pair (MAC address, VLAN number), the corrisponding
+value (the payload) changes depending upon the implementation of VDE (a local switch
+may use an integer like a file descriptor or a port number while distributed implementations
+like vxvde use socket address, like sockaddr_in or sockaddr_in6).
+
+The macro to create a hash table is:
+	struct vde_hashtable *vde_hash_init(type, unsigned int hashsize, unsigned int seed)
+where type is the type of the payload, hashsize is the number of element of the
+hash table and seed is an optional value to perturbate the hash function computation
+in case too many collisions occur.
+vde_hash_init returns a descriptor of the hash table which will be used as the first argument
+of all the other functions.
+
+void vde_hash_fini(struct vde_hashtable *table);
+deallocate the hash table.
+
+void vde_find_in_hash_update(struct vde_hashtable *table, unsigned char *src, int vlan, void *payload, time_t now);
+This function should be used when a packet is reeceived to update (or renew) the hash entry 
+for this source of ethernet packets.
+The payload (shich should be a pointer to the type specified in vde_hash_fini) is copied
+in the hash table and the value now is the (new) timestamp of this match.
+
+void *vde_find_in_hash(struct vde_hashtable *table, unsigned char *dst, int vlan, time_t too_old);
+this function searches in the hash table the destination address. If the entry exists but it
+has a timestamp older than the value of the parameter too_old, it is ignored.
+So the return value is NULL if the key does not exist or its match validity has expired
+otherwise it is a pointer to the payload corresponding to the key. 
+
+void vde_hash_delete(struct vde_hashtable *table, void *payload);
+this function deletes an element from the hash table.
+
++++ utility functions +++
+unsigned long long strtoullm(const char *numstr);
+converts a string in a unsigned long long value (like strtoull). This functions allows
+multipliers like K, M, G, T meaning kilo, mega, giga, tera.
+e.g. "1K" is converted to 1024.
+
+gid_t vde_grnam2gid(const char *name);
+gets the gid of a group given its name. It returns -1 if such a group does not exist. 

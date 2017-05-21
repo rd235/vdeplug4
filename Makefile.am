@@ -1,1 +1,1 @@
-SUBDIRS = libvdeplug4 srcvdeplug4 include man
+SUBDIRS = libvdeplug4 srcvdeplug4 include man doc
