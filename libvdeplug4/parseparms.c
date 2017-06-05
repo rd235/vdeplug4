@@ -90,11 +90,12 @@ gid_t vde_grnam2gid(const char *name) {
 
 #define COPY 1
 
-static char nextstate[4][6] = {
+static char nextstate[5][6] = {
 	{CHAR, QUOTE, DOUBLEQ, ESC, DELIM, END},
 	{QUOTE, CHAR, QUOTE, QUOTE, QUOTE, END},
 	{DOUBLEQ, DOUBLEQ, CHAR, DOUBLEQ, DOUBLEQ, END},
-	{CHAR, CHAR, CHAR, CHAR, CHAR, END}};
+	{CHAR, CHAR, CHAR, CHAR, CHAR, END},
+	{CHAR, QUOTE, DOUBLEQ, ESC, DELIM, END}};
 
 static char action[4][6] = {
 	{COPY, 0, 0, 0, 0, 0},
@@ -102,15 +103,13 @@ static char action[4][6] = {
 	{COPY, COPY, 0, COPY, COPY, 0},
 	{COPY, COPY, COPY, COPY, COPY, 0}};
 
-
+/* like strtok_r(3) + this function supports quoting with ' " and char protection \ */
 static char *strtokq_r(char *s, const char *delim, char **saveptr) {
 	char *begin, *from, *to;
 	int status = CHAR;
-	begin = (s == NULL) ? *saveptr : s;
-	from = to = begin;
+	begin = from = to = (s == NULL) ? *saveptr : s;
 	if (from == NULL)
 		return NULL;
-	begin = from;
 	while ((status & DELIM) == 0) { /* this includes END */
 		int this;
 		int todo;
@@ -130,6 +129,31 @@ static char *strtokq_r(char *s, const char *delim, char **saveptr) {
 	}
 	*to = 0;
 	*saveptr = (status == END) ? NULL : from;
+	return begin;
+}
+
+/* this function splits the token using the last (non quoted) occurence of the delimiter */
+static char *strtokq_rev_r(char *s, const char *delim, char **saveptr) {
+	char *begin, *scan, *to;
+	int status = CHAR;
+	scan = begin = (s == NULL) ? *saveptr : s;
+	to = NULL;
+	if (scan == NULL)
+		return NULL;
+	for (;status != END; scan++) {
+		int this;
+		switch (*scan) {
+			case 0: this = END; break;
+			case '\'': this = QUOTE; break;
+			case '\"': this = DOUBLEQ; break;
+			case '\\': this = ESC; break;
+			default: this = strchr(delim, *scan) == NULL ? CHAR : DELIM;
+		}
+		status = nextstate[status][this];
+		if (status == DELIM) to = scan;
+	}
+	if (to != NULL) *to = 0;
+	*saveptr = (status == END) ? NULL : scan;
 	return begin;
 }
 
@@ -166,7 +190,7 @@ int vde_parsepathparms(char *str,struct vdeparms *parms){
 		char *elem;
 		char *bracket;
 		elem = strtokq_r(str,"[",&sp);
-		for (bracket = strtokq_r(NULL,"]",&sp);
+		for (bracket = strtokq_rev_r(NULL,"]",&sp);
 				(elem = strtokq_r(bracket, "/", &sp)) != NULL; bracket = NULL) {
 			char *eq = strchr(elem, '=');
 			int taglen=eq ? eq-elem : strlen(elem);
@@ -191,6 +215,17 @@ int vde_parsepathparms(char *str,struct vdeparms *parms){
 		}
 	}
 	return 0;
+}
+
+char *vde_parsenestparms(char *str){
+	if (*str != 0) {
+		char *sp;
+		char *bracket;
+		strtokq_r(str,"{",&sp);
+		bracket = strtokq_rev_r(NULL,"}",&sp);
+		return bracket;
+	}
+	return NULL;
 }
 
 #if 0

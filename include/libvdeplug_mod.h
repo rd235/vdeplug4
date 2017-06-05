@@ -33,6 +33,7 @@ struct vdeparms {
 
 int vde_parseparms(char *str,struct vdeparms *parms);
 int vde_parsepathparms(char *str,struct vdeparms *parms);
+char *vde_parsenestparms(char *str);
 
 struct vde_hashtable;
 void *vde_find_in_hash(struct vde_hashtable *table, unsigned char *dst, int vlan, time_t too_old);
