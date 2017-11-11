@@ -32,23 +32,23 @@
 #include <sys/stat.h>
 #include "libvdeplug_mod.h"
 
-static VDECONN *vde_p2p_open(char *given_vde_url, char *descr,int interface_version,
+static VDECONN *vde_ptp_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args);
-static ssize_t vde_p2p_recv(VDECONN *conn,void *buf,size_t len,int flags);
-static ssize_t vde_p2p_send(VDECONN *conn,const void *buf,size_t len,int flags);
-static int vde_p2p_datafd(VDECONN *conn);
-static int vde_p2p_ctlfd(VDECONN *conn);
-static int vde_p2p_close(VDECONN *conn);
+static ssize_t vde_ptp_recv(VDECONN *conn,void *buf,size_t len,int flags);
+static ssize_t vde_ptp_send(VDECONN *conn,const void *buf,size_t len,int flags);
+static int vde_ptp_datafd(VDECONN *conn);
+static int vde_ptp_ctlfd(VDECONN *conn);
+static int vde_ptp_close(VDECONN *conn);
 
 struct vdeplug_module vdeplug_ops={
-	.vde_open_real=vde_p2p_open,
-	.vde_recv=vde_p2p_recv,
-	.vde_send=vde_p2p_send,
-	.vde_datafd=vde_p2p_datafd,
-	.vde_ctlfd=vde_p2p_ctlfd,
-	.vde_close=vde_p2p_close};
+	.vde_open_real=vde_ptp_open,
+	.vde_recv=vde_ptp_recv,
+	.vde_send=vde_ptp_send,
+	.vde_datafd=vde_ptp_datafd,
+	.vde_ctlfd=vde_ptp_ctlfd,
+	.vde_close=vde_ptp_close};
 
-struct vde_p2p_conn {
+struct vde_ptp_conn {
 	void *handle;
 	struct vdeplug_module *module;
 	int fddata;
@@ -59,7 +59,7 @@ struct vde_p2p_conn {
 
 #define UNUSED(X) ({(void *)((intptr_t)(X));})
 
-static VDECONN *vde_p2pf_open(char *given_vde_url, char *descr,int interface_version,
+static VDECONN *vde_ptpf_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args)
 {
 	int port=0;
@@ -70,7 +70,7 @@ static VDECONN *vde_p2pf_open(char *given_vde_url, char *descr,int interface_ver
 	struct sockaddr_un sockout;
 	struct stat sockstat;
 	int res;
-	struct vde_p2p_conn *newconn;
+	struct vde_ptp_conn *newconn;
 
 	if (open_args != NULL) {
 		if (interface_version == 1) {
@@ -121,7 +121,7 @@ static VDECONN *vde_p2pf_open(char *given_vde_url, char *descr,int interface_ver
 	}
 	chmod(sockun.sun_path,mode);
 
-	if ((newconn=calloc(1,sizeof(struct vde_p2p_conn)))==NULL)
+	if ((newconn=calloc(1,sizeof(struct vde_ptp_conn)))==NULL)
 	{
 		errno=ENOMEM;
 		goto abort;
@@ -140,7 +140,7 @@ abort:
 	return NULL;
 }
 
-static VDECONN *vde_p2pm_open(char *given_vde_url, char *descr,int interface_version,
+static VDECONN *vde_ptpm_open(char *given_vde_url, char *descr,int interface_version,
 		    struct vde_open_args *open_args)
 {
 	int port=0;
@@ -151,7 +151,7 @@ static VDECONN *vde_p2pm_open(char *given_vde_url, char *descr,int interface_ver
 	struct sockaddr_un sockout;
 	struct stat sockstat;
 	int res;
-	struct vde_p2p_conn *newconn;
+	struct vde_ptp_conn *newconn;
 
 	if (open_args != NULL) {
 		if (interface_version == 1) {
@@ -205,7 +205,7 @@ static VDECONN *vde_p2pm_open(char *given_vde_url, char *descr,int interface_ver
 	}
 	chmod(sockun.sun_path,mode);
 
-	if ((newconn=calloc(1,sizeof(struct vde_p2p_conn)))==NULL)
+	if ((newconn=calloc(1,sizeof(struct vde_ptp_conn)))==NULL)
 	{
 		errno=ENOMEM;
 		goto abort;
@@ -224,20 +224,19 @@ abort:
 	return NULL;
 }
 
-static VDECONN *vde_p2p_open(char *given_vde_url, char *descr,int interface_version,
+static VDECONN *vde_ptp_open(char *given_vde_url, char *descr,int interface_version,
 		    struct vde_open_args *open_args)
 {
 	VDECONN *rv;
-	if (*given_vde_url) given_vde_url--;
-	rv=vde_p2pf_open(given_vde_url, descr, interface_version, open_args);
+	rv=vde_ptpf_open(given_vde_url, descr, interface_version, open_args);
 	if (!rv)
-		rv=vde_p2pm_open(given_vde_url, descr, interface_version, open_args);
+		rv=vde_ptpm_open(given_vde_url, descr, interface_version, open_args);
 	return rv;
 }
 
-static ssize_t vde_p2p_recv(VDECONN *conn,void *buf,size_t len,int flags)
+static ssize_t vde_ptp_recv(VDECONN *conn,void *buf,size_t len,int flags)
 {
-	struct vde_p2p_conn *vde_conn = (struct vde_p2p_conn *)conn;
+	struct vde_ptp_conn *vde_conn = (struct vde_ptp_conn *)conn;
 #ifdef CONNECTED_P2P
 	ssize_t retval;
 	if (__builtin_expect(((retval=recv(vde_conn->fddata,buf,len,0)) > 0), 1))
@@ -254,9 +253,9 @@ static ssize_t vde_p2p_recv(VDECONN *conn,void *buf,size_t len,int flags)
 #endif
 }
 
-static ssize_t vde_p2p_send(VDECONN *conn,const void *buf,size_t len,int flags)
+static ssize_t vde_ptp_send(VDECONN *conn,const void *buf,size_t len,int flags)
 {
-	struct vde_p2p_conn *vde_conn = (struct vde_p2p_conn *)conn;
+	struct vde_ptp_conn *vde_conn = (struct vde_ptp_conn *)conn;
 #ifdef CONNECTED_P2P
 	ssize_t retval;
 	if (__builtin_expect(((retval=send(vde_conn->fddata,buf,len,0)) >= 0),1))
@@ -276,20 +275,20 @@ static ssize_t vde_p2p_send(VDECONN *conn,const void *buf,size_t len,int flags)
 #endif
 }
 
-static int vde_p2p_datafd(VDECONN *conn)
+static int vde_ptp_datafd(VDECONN *conn)
 {
-	struct vde_p2p_conn *vde_conn = (struct vde_p2p_conn *)conn;
+	struct vde_ptp_conn *vde_conn = (struct vde_ptp_conn *)conn;
 	return vde_conn->fddata;
 }
 
-static int vde_p2p_ctlfd(VDECONN *conn)
+static int vde_ptp_ctlfd(VDECONN *conn)
 {
 	return -1;
 }
 
-static int vde_p2p_close(VDECONN *conn)
+static int vde_ptp_close(VDECONN *conn)
 {
-	struct vde_p2p_conn *vde_conn = (struct vde_p2p_conn *)conn;
+	struct vde_ptp_conn *vde_conn = (struct vde_ptp_conn *)conn;
 	close(vde_conn->fddata);
 	if (vde_conn->inpath != NULL) {
 		unlink(vde_conn->inpath);

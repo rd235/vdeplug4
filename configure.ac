@@ -17,7 +17,7 @@ AC_PROG_INSTALL
 LT_INIT
 
 # Checks for libraries.
-AC_CHECK_LIB([execs], [s2multiargv])
+AC_CHECK_LIB([execs], [s2multiargv], [LIBEXECS=ok])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h string.h unistd.h syslog.h])
