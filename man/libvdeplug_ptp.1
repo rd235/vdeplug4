@@ -1,8 +1,8 @@
 .TH LIBVDEPLUG_P2P 1 "August 23, 2016" "Virtual Distributed Ethernet"
 .SH NAME
-libvdeplug_p2p - vdeplug module for point to point connections
+libvdeplug_ptp - vdeplug module for point to point connections
 .SH SYNOPSIS
-libvdeplug_p2p.so
+libvdeplug_ptp.so
 .SH DESCRIPTION
 This module interconnects two vde supporting tools by a point to point
 communication line.
@@ -16,7 +16,7 @@ The vde_plug_url syntax of this module is the following:
 .RE
 
 .SH EXAMPLES
-.B p2p:///tmp/sock
+.B ptp:///tmp/sock
 .br
 The same vde_plug_url can be used at both ends of the connection.
 The first program creates the socket \fB/tmp/sock\fR. The second program connects to

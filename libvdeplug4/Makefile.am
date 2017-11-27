@@ -1,7 +1,7 @@
 SUBDIRS = libvdeplug2_legacy
 
 lib_LTLIBRARIES = libvdeplug.la libvdeplug_mod.la libvdeplug_vde.la\
-									libvdeplug_p2p.la libvdeplug_tap.la libvdeplug_udp.la\
+									libvdeplug_ptp.la libvdeplug_tap.la libvdeplug_udp.la\
 									libvdeplug_vxlan.la libvdeplug_vxvde.la libvdeplug_cmd.la \
 									libvdeplug_null.la \
 									libvdeplug_hub.la libvdeplug_switch.la libvdeplug_multi.la libvdeplug_bonding.la
@@ -18,9 +18,9 @@ libvdeplug_vde_la_SOURCES = libvdeplug_vde.c
 libvdeplug_vde_la_LIBADD = -lvdeplug_mod
 libvdeplug_vde_la_LDFLAGS = -module -avoid-version
 
-libvdeplug_p2p_la_SOURCES = libvdeplug_p2p.c
-libvdeplug_p2p_la_LIBADD = -lvdeplug_mod
-libvdeplug_p2p_la_LDFLAGS = -module -avoid-version
+libvdeplug_ptp_la_SOURCES = libvdeplug_ptp.c
+libvdeplug_ptp_la_LIBADD = -lvdeplug_mod
+libvdeplug_ptp_la_LDFLAGS = -module -avoid-version
 
 libvdeplug_tap_la_SOURCES = libvdeplug_tap.c
 libvdeplug_tap_la_LIBADD = -lvdeplug_mod
