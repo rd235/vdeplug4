@@ -17,10 +17,15 @@ AC_PROG_INSTALL
 LT_INIT
 
 # Checks for libraries.
-AC_CHECK_LIB([execs], [s2multiargv], [LIBEXECS=ok])
+AC_CHECK_LIB([execs], [s2multiargv], [LIBEXECS=ok],[
+		AC_MSG_ERROR([vdeplug4 requires libexecs])
+		])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h string.h unistd.h syslog.h])
+AC_CHECK_HEADERS([execs.h],[],[
+		AC_MSG_ERROR([unable to find execs.h])
+		])
 
 # Checks for typedefs, structures, and compiler characteristics.
 
