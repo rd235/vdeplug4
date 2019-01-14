@@ -18,7 +18,7 @@ LT_INIT
 
 # Checks for libraries.
 AC_CHECK_LIB([execs], [s2multiargv], [LIBEXECS=ok],[
-		AC_MSG_ERROR([vdeplug4 requires libexecs])
+		AC_MSG_ERROR([vdeplug4 requires libexecs (s2argv-execs)])
 		])
 
 # Checks for header files.
