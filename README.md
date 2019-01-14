@@ -53,7 +53,7 @@ The new library supports plug-ins so it is open to new developments in vrtual ne
 
 Several plug-ins are provided as standard extensions of the library (batteries included):
 - vde: connect to legacy vde\_switch (provided by vde2)
-- p2p: peer to peer connection between two VM
+- ptp: peer to peer connection between two VM
 - tap: connect a VM or a virtual network to 
 - vxlan: connect vde switches or other vde networks to vxlan
 - vxvde: this plug-in implements distributed virtual switches
