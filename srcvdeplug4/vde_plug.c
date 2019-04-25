@@ -358,7 +358,8 @@ int main(int argc, char *argv[])
 				break;
 
 			case 'D' : 
-				description = optarg;
+				if (*optarg != 0)
+					description = optarg;
 				break;
 
 			default:
