@@ -22,11 +22,12 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sched.h>
 #include <pwd.h>
-#include <dlfcn.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <libvdeplug.h>
@@ -39,6 +40,19 @@ struct vdeconn {
 #define SEQPACKET_HEAD "seqpacket://"
 #define SEQPACKET_HEAD_LEN (sizeof(SEQPACKET_HEAD) - 1)
 #define DEFAULT_DESCRIPTION "libvdeplug"
+#define CHILDSTACKSIZE 4096
+
+struct child_data {
+  char **argv;
+  int fd;
+};
+
+static int child(void *arg) {
+  struct child_data *data = arg;
+  execvp(data->argv[0], data->argv);
+  close(data->fd);
+  return 0;
+}
 
 VDECONN *vde_open_real(char *given_vde_url, char *descr,int interface_version,
 		    struct vde_open_args *open_args)
@@ -47,39 +61,65 @@ VDECONN *vde_open_real(char *given_vde_url, char *descr,int interface_version,
 	struct vdeconn *conn;
 	char *description = (descr != NULL && *descr != 0) ? descr : DEFAULT_DESCRIPTION;
 	char seqpacketurl[SEQPACKET_HEAD_LEN + ENOUGH(int) + 1] = SEQPACKET_HEAD;
-	char *argv[] = {"vde_plug", "--descr", description, seqpacketurl, given_vde_url, NULL};
-	int rv = socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sv);
+	char *argv[] = {"vde_plug", "--descr", description, seqpacketurl, 
+		(given_vde_url == NULL) ? "" : given_vde_url, NULL};
+	int rv;
+	struct child_data data;
+  char childstack[CHILDSTACKSIZE];
+	int fds[2];
+	int pid;
+
+	rv = socketpair(AF_UNIX, SOCK_STREAM, 0, fds);
+	if (rv < 0)
+		goto leave;
+	data.argv = argv;
+  data.fd = fds[1];
+
+  rv = fcntl(fds[1], F_SETFD, FD_CLOEXEC);
+	if (rv < 0)
+		goto close_fds;
+
+	rv = socketpair(AF_UNIX, SOCK_SEQPACKET, 0, sv);
 	if (rv < 0) 
-		goto abort;
+		goto close_fds;
+
+  rv = fcntl(sv[0], F_SETFD, FD_CLOEXEC);
+	if (rv < 0)
+		goto close_sv;
+
 	conn = (VDECONN *) malloc(sizeof(VDECONN));
 	if (conn == NULL)
-		goto nomem;
+		goto close_sv;
 
 	snprintf(seqpacketurl + SEQPACKET_HEAD_LEN, SEQPACKET_HEAD_LEN, "%d", sv[1]);
 
-	switch (fork()) {
-		case 0:
-			close(sv[0]);
-			execvp("vde_plug", argv);
-			exit(1);
+	/* use clone instead of fork. User-mode linux cannot fork */
+	pid = clone(child, (void *) childstack + CHILDSTACKSIZE,
+      CLONE_VM, &data);
+	if (pid < 0)
+		goto free_conn;
 
-		default:
-			close(sv[1]);
-			conn->fddata = sv[0];
-			break;
+	close(fds[1]);
+	close(sv[1]);
+	conn->fddata = sv[0];
 
-		case -1:
-			goto forkabort;
-	}
+	/* wait for child's execvp */
+	/* TODO it can return an error code if execvp fails*/
+	read(fds[0], &rv, sizeof(rv));
+
+	close(fds[0]);
 
 	return conn;
 
-forkabort:
+free_conn:
 	free(conn);
-nomem:
+close_sv:
 	close(sv[0]);
 	close(sv[1]);
-abort:
+close_fds:
+	close(fds[0]);
+	close(fds[1]);
+leave:
 	return NULL;
 }
 
