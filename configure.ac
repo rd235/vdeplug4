@@ -40,4 +40,5 @@ AC_OUTPUT(
 		[include/Makefile]
 		[man/Makefile]
 		[doc/Makefile]
+		[libvdeplug4_static/Makefile]
 		)
