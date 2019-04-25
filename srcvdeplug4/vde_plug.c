@@ -47,6 +47,8 @@
 #include <selfsighandler.h>
 
 #define VDE_IP_LOG_GROUP "vdeplug_iplog"
+#define DEFAULT_DESCRIPTION "vdeplug:"
+
 int vde_ip_log;
 
 VDECONN *conn;
@@ -247,11 +249,13 @@ static void usage_and_exit(char *progname) {
 			"  --port PORT1, --port2 PORT2:\n"
 			"                            obsolete options, set the vde switch port,\n"
 			"                            use [port] suffix in the vde_plug_url instead\n"
+			"  -D DESCR | --descr DESCR  set the description of this connection to DESCR\n"
+			"                            (the default value is \"" DEFAULT_DESCRIPTION "\"\n"
 			"\n",progname,progname,progname,progname,progname);
 	exit(-1);
 }
 
-char short_options[] = "c:hp:dm:M:g:G:lL";
+char short_options[] = "c:hp:dm:M:g:G:lLD:";
 struct option long_options[] = {
 	{"pidfile",  required_argument, 0, 'p' },
 	{"daemon",   no_argument,       0, 'd' },
@@ -261,6 +265,7 @@ struct option long_options[] = {
 	{"mod2",     required_argument, 0, 'M'},
 	{"group",    required_argument, 0, 'g'},
 	{"group2",   required_argument, 0, 'G'},
+	{"descr",    required_argument, 0, 'D' },
 	{"log",      no_argument,       0, 'l' },
 	{"iplog",    no_argument,       0, 'L' },
 	{"help",     no_argument,       0, 'h' },
@@ -278,6 +283,7 @@ int main(int argc, char *argv[])
 	struct vde_open_args open_args2 = {.port = 0,.group = NULL,.mode = 0700};
 	int daemonize = 0;
 	char *pidfile = NULL;
+	char *description = DEFAULT_DESCRIPTION;
 
 	uname(&me);
 
@@ -351,6 +357,10 @@ int main(int argc, char *argv[])
 				daemonize = 1;
 				break;
 
+			case 'D' : 
+				description = optarg;
+				break;
+
 			default:
 				usage_and_exit(progname); //implies exit
 		}
@@ -393,13 +403,13 @@ int main(int argc, char *argv[])
 	atexit(cleanup);
 	setsighandlers(cleanup);
 
-	conn = vde_open(vde_url,"vde_plug:",&open_args);
+	conn = vde_open(vde_url, description, &open_args);
 	if (conn == NULL) {
 		fprintf(stderr,"vde_open %s: %s\n",vde_url && *vde_url ? vde_url : "default switch", strerror(errno));
 		exit(1);
 	}
 	if (vde_url2 != NULL) {
-		conn2 = vde_open(vde_url2,"vde_plug:",&open_args2);
+		conn2 = vde_open(vde_url2, description, &open_args2);
 		if (conn2 == NULL) {
 			fprintf(stderr,"vde_open %s: %s\n",vde_url2 && *vde_url2 ? vde_url2 : "default switch", strerror(errno));
 			exit(1);
