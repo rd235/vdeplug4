@@ -4,7 +4,8 @@ lib_LTLIBRARIES = libvdeplug.la libvdeplug_mod.la libvdeplug_vde.la\
 									libvdeplug_ptp.la libvdeplug_tap.la libvdeplug_udp.la\
 									libvdeplug_vxlan.la libvdeplug_vxvde.la libvdeplug_cmd.la \
 									libvdeplug_null.la \
-									libvdeplug_hub.la libvdeplug_switch.la libvdeplug_multi.la libvdeplug_bonding.la
+									libvdeplug_hub.la libvdeplug_switch.la libvdeplug_multi.la libvdeplug_bonding.la \
+									libvdeplug_seqpacket.la
 
 libvdeplug_mod_la_SOURCES = parseparms.c vde_hashtable.c
 libvdeplug_mod_la_LIBADD = -ldl
@@ -61,4 +62,8 @@ libvdeplug_multi_la_LDFLAGS = -module -avoid-version
 libvdeplug_bonding_la_SOURCES = libvdeplug_bonding.c libvdeplug_netnode.c
 libvdeplug_bonding_la_LIBADD = -lvdeplug_mod
 libvdeplug_bonding_la_LDFLAGS = -module -avoid-version
+
+libvdeplug_seqpacket_la_SOURCES = libvdeplug_seqpacket.c
+libvdeplug_seqpacket_la_LIBADD = -lvdeplug_mod
+libvdeplug_seqpacket_la_LDFLAGS = -module -avoid-version
 
