@@ -14,6 +14,10 @@ AC_ENABLE_STATIC(no)
 AC_PROG_CC
 AC_PROG_INSTALL
 
+# Silence warning: ar: 'u' modifier ignored since 'D' is the default
+AC_SUBST(AR_FLAGS, [cr])
+AC_SUBST(ARFLAGS, [cr])
+
 LT_INIT
 
 # Checks for libraries.
