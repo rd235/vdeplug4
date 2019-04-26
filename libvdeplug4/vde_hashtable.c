@@ -93,7 +93,7 @@ void vde_hash_delete(struct vde_hashtable *table, void *payload)
 	}
 }
 
-#define vde_hash_init(type, hash_mask, seed) _vde_hash_init(sizeof(type), (hash_mask), (seed))
+// #define vde_hash_init(type, hash_mask, seed) _vde_hash_init(sizeof(type), (hash_mask), (seed))
 
 struct vde_hashtable *_vde_hash_init(size_t payload_size, unsigned int hashsize, uint64_t seed)
 {
