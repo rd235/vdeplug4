@@ -1,7 +1,7 @@
 # vdeplug4
 VDE: Virtual Distributed Ethernet. Plug your VM directly to the cloud.
 
-Vdeplug4 is a new perpective on virtual networking.
+Vdeplug4 is a new perspective on virtual networking.
 
 ## hello vxvde world
 
