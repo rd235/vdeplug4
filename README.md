@@ -7,11 +7,13 @@ Vdeplug4 is a new perspective on virtual networking.
 
 Install vdeplug4:
 ```
-$ autoreconf -if
-$ ./configure
+$ mkdir build
+$ cd build
+$ cmake ..
 $ make
 $ sudo make install
 ```
+If you want to install the programs in /usr/bin run "cmake .. -DCMAKE_INSTALL_PREFIX:PATH=/usr" instead of "cmake ..".
 
 Start several VM *on different hosts on the same LAN* (IP ttl must be 1).
 (VM virtual controllers must have different MAC addresses).
@@ -54,7 +56,7 @@ The new library supports plug-ins so it is open to new developments in vrtual ne
 Several plug-ins are provided as standard extensions of the library (batteries included):
 - vde: connect to legacy vde\_switch (provided by vde2)
 - ptp: peer to peer connection between two VM
-- tap: connect a VM or a virtual network to 
+- tap: connect a VM or a virtual network to
 - vxlan: connect vde switches or other vde networks to vxlan
 - vxvde: this plug-in implements distributed virtual switches
 - udp: udp tunnelling
@@ -72,4 +74,3 @@ This latter example will work provided there is a dynamic library named libvdepl
 available and accepting the syntax of the parameters after '//'
 
 Other modules can be added. Vdeplug4 includes the header file and a support library to implement further plugins.
-
