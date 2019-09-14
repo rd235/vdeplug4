@@ -15,7 +15,7 @@ foreach(file ${files})
         )
 
         if(${remove_file})
-            message(FATAL_ERROR "Failed to remove file: ${file}")
+            message(FATAL_ERROR "Failed to remove: ${file}")
         endif()
     else()
         MESSAGE(STATUS "Warning: ${file} does not exist")
