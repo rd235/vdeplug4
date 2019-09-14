@@ -7,7 +7,7 @@ endif()
 file(STRINGS ${MANIFEST} files)
 foreach(file ${files})
     if(EXISTS ${file})
-        message(STATUS "Removing file: '${file}'")
+        message(STATUS "Removing: ${file}")
 
         execute_process(
             COMMAND bash "-c" "rm ${file}"
@@ -15,9 +15,9 @@ foreach(file ${files})
         )
 
         if(${remove_file})
-            message(FATAL_ERROR "Failed to remove file: '${file}'.")
+            message(FATAL_ERROR "Failed to remove file: ${file}")
         endif()
     else()
-        MESSAGE(STATUS "File '${file}' does not exist.")
+        MESSAGE(STATUS "Warning: ${file} does not exist")
     endif()
 endforeach(file)
