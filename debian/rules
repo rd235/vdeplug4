@@ -17,10 +17,3 @@ export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 override_dh_auto_install:
 	dh_auto_install --dest debian/tmp
-
-# temporary overrides
-# TODO: dh_shlibdeps unable to find libvdeplug4
-# TODO: dh_shlibdeps complains that no packages own libvdeplug4.
-# 	Different package for libvdeplug4?
-override_dh_shlibdeps:
-	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info -l$(shell pwd)/obj-x86_64-linux-gnu/libvdeplug4

@@ -7,3 +7,8 @@ set_target_properties(vdeplug_legacy PROPERTIES SOVERSION 2)
 target_link_libraries(vdeplug_legacy -ldl)
 target_link_libraries(vdeplug_legacy -export-dynamic)
 target_link_libraries(vdeplug_legacy -DVDEPLUG2_LEGACY)
+
+install(
+        TARGETS vdeplug_legacy
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)

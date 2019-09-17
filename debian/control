@@ -9,6 +9,17 @@ Vcs-Browser: https://github.com/rd235/vdeplug4
 Vcs-Git: https://github.com/rd235/vdeplug4.git
 
 Package: vdeplug4
+Section: net
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libvdeplug4 (= ${binary:Version})
+Description: Virtual Distributed Ethernet. Plug your VM directly to the cloud.
+ Designed to be connected to vde_switches. Like an ethernet plug, everything
+ that is injected into it from standard input is sent into the vde_switch
+ which it is connected to. On the other hand everything that comes from the
+ virtual network to that plug goes to the vde_plug standard output.
+
+Package: libvdeplug4
+Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Virtual Distributed Ethernet. Plug your VM directly to the cloud.
@@ -16,3 +27,16 @@ Description: Virtual Distributed Ethernet. Plug your VM directly to the cloud.
  that is injected into it from standard input is sent into the vde_switch
  which it is connected to. On the other hand everything that comes from the
  virtual network to that plug goes to the vde_plug standard output.
+
+Package: libvdeplug-dev
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libvdeplug4 (= ${binary:Version})
+Description: Virtual Distributed Ethernet. Plug your VM directly to the cloud.
+ Designed to be connected to vde_switches. Like an ethernet plug, everything
+ that is injected into it from standard input is sent into the vde_switch
+ which it is connected to. On the other hand everything that comes from the
+ virtual network to that plug goes to the vde_plug standard output.
+ .
+ This package contains the necessary headers and shared object files needed to
+ develop applications using libvdeplug4.
