@@ -8,4 +8,8 @@ target_link_libraries(vde_plug vdeplug)
 
 add_executable(dpipe dpipe.c openclosepidfile.c selfsighandler.c)
 
-install(TARGETS vde_plug dpipe DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(
+        TARGETS vde_plug dpipe
+        RUNTIME
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+)

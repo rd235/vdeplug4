@@ -10,5 +10,6 @@ target_link_libraries(vdeplug_legacy -DVDEPLUG2_LEGACY)
 
 install(
         TARGETS vdeplug_legacy
+        LIBRARY
         DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )

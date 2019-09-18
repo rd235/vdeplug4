@@ -58,5 +58,6 @@ install(
                 vdeplug_udp vdeplug_vxlan vdeplug_vxvde vdeplug_cmd
                 vdeplug_null vdeplug_hub vdeplug_switch vdeplug_multi
                 vdeplug_bonding vdeplug_seqpacket
+        LIBRARY
         DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
