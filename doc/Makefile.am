@@ -1,1 +1,0 @@
-dist_doc_DATA = howto_create_a_vdeplug_plugin
