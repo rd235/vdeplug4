@@ -57,7 +57,7 @@ struct vde_ptp_conn {
 	size_t outlen;
 };
 
-#define UNUSED(X) ({(void *)((intptr_t)(X));})
+#define UNUSED(...) (void)(__VA_ARGS__)
 
 static VDECONN *vde_ptpf_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args)

@@ -133,7 +133,7 @@ VDECONN *vde_open_real(char *given_vde_url, char *descr,int interface_version,
 	snprintf(seqpacketurl + SEQPACKET_HEAD_LEN, SEQPACKET_HEAD_LEN, "%d", sv[1]);
 
 	/* use clone instead of fork. User-mode linux cannot fork */
-	pid = clone(child, (void *) childstack + CHILDSTACKSIZE,
+	pid = clone(child, (void *) (childstack + CHILDSTACKSIZE),
       CLONE_VM, &data);
 	if (pid < 0)
 		err_goto(err, free_conn);

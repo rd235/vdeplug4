@@ -81,7 +81,7 @@ void setsighandlers(void (*cleanup)(void))
 				perror("Setting handler");
 	for(i = 0; signals[i].sig != 0; i++)
 		if (signals[i].ignore)
-			if (signal(signals[i].sig, SIG_IGN) < 0)
+			if (signal(signals[i].sig, SIG_IGN) == SIG_ERR)
 				perror("Setting handler");
 
 	cleanupcopy = cleanup;

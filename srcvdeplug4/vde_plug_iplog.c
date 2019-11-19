@@ -54,7 +54,7 @@ union body {
 struct addrelem {
 	struct addrelem *next;
 	unsigned int len;
-	char addr[0];
+	char addr[];
 };
 
 static unsigned long hash(unsigned int len, unsigned char *addr)

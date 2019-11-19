@@ -34,10 +34,10 @@
 #include <sys/types.h>
 #include "libvdeplug_mod.h"
 
-static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_version,
+static VDECONN *vde_vde_open(char *given_vde_url, char *descr, int interface_version,
 		struct vde_open_args *open_args);
-static ssize_t vde_vde_recv(VDECONN *conn,void *buf,size_t len,int flags);
-static ssize_t vde_vde_send(VDECONN *conn,const void *buf,size_t len,int flags);
+static ssize_t vde_vde_recv(VDECONN *conn, void *buf, size_t len, int flags);
+static ssize_t vde_vde_send(VDECONN *conn, const void *buf, size_t len, int flags);
 static int vde_vde_datafd(VDECONN *conn);
 static int vde_vde_ctlfd(VDECONN *conn);
 static int vde_vde_close(VDECONN *conn);
@@ -118,14 +118,14 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 	int fdctl=-1;
 	int fddata=-1;
 	struct sockaddr_un sockun;
-	struct sockaddr_un dataout;
+	struct sockaddr_un datasock;
 	const char *vde_url=NULL;
 	int res;
 	int pid=getpid();
 	int sockno=0;
 	struct vde_vde_conn *newconn;
-	struct vdeparms parms[] = {{"",&portgroup},{"port",&portgroup},{"portgroup",&portgroup},
-		{"group",&group},{"mode",&modestr},{NULL, NULL}};
+	struct vdeparms parms[] = {{"", &portgroup}, {"port", &portgroup}, {"portgroup", &portgroup},
+		{"group", &group}, {"mode", &modestr}, {NULL, NULL}};
 
 	if (open_args != NULL) {
 		if (interface_version == 1) {
@@ -176,7 +176,7 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 
 	/* If we're given a vde_url, just try it (remember: vde_url is the
 	 * canonicalized version of given_vde_url - though we don't strictly need
-	 * the canonicalized versiono here). vde_url should be the name of a
+	 * the canonicalized version here). vde_url should be the name of a
 	 * *directory* which contains the control socket, named ctl. Older
 	 * versions of VDE used a socket instead of a directory (so an additional
 	 * attempt with %s instead of %s/ctl could be made), but they should
@@ -194,7 +194,7 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 		}
 	}
 
-	if (res<0)
+	if (res < 0)
 		goto abort;
 
 	req.magic=SWITCH_MAGIC;
@@ -209,13 +209,13 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 	}
 	strncpy(req.description, descr, MAXDESCR);
 
-	req.sock.sun_family=AF_UNIX;
-	memset(req.sock.sun_path, 0, sizeof(req.sock.sun_path));
+	datasock.sun_family = AF_UNIX;
+	memset(datasock.sun_path, 0, sizeof(datasock.sun_path));
 	do
 	{
 		/* Here vde_url is the last successful one in the previous step. */
-		snprintf(req.sock.sun_path, sizeof(req.sock.sun_path), "%s/.%05d-%05d", vde_url, pid, sockno++);
-		res=bind(fddata, (struct sockaddr *) &req.sock, sizeof (req.sock));
+		snprintf(datasock.sun_path, sizeof(datasock.sun_path), "%s/.%05d-%05d", vde_url, pid, sockno++);
+		res=bind(fddata, (struct sockaddr *) &datasock, sizeof (datasock));
 	}
 	while (res < 0 && errno == EADDRINUSE);
 
@@ -226,11 +226,11 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 		int i;
 		for (i = 0, res = -1, sockno = 0; fallback_dirname[i] && (res != 0); i++)
 		{
-			memset(req.sock.sun_path, 0, sizeof(req.sock.sun_path));
+			memset(datasock.sun_path, 0, sizeof(datasock.sun_path));
 			do
 			{
-				sprintf(req.sock.sun_path, "%s/vde.%05d-%05d", fallback_dirname[i], pid, sockno++);
-				res = bind(fddata, (struct sockaddr *) &req.sock, sizeof (req.sock));
+				sprintf(datasock.sun_path, "%s/vde.%05d-%05d", fallback_dirname[i], pid, sockno++);
+				res = bind(fddata, (struct sockaddr *) &datasock, sizeof (datasock));
 			}
 			while (res < 0 && errno == EADDRINUSE);
 		}
@@ -247,7 +247,7 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 			gid=atoi(group);
 		else
 			gid=gs->gr_gid;
-		if (chown(req.sock.sun_path,-1,gid) < 0)
+		if (chown(datasock.sun_path, -1, gid) < 0)
 			goto abort_deletesock;
 	} else {
 		/* when group is not defined, set permission for the reverse channel */
@@ -261,7 +261,7 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 					/* try to change the group ownership to the same of the switch */
 					/* this call succeeds if the vde user and the owner of the switch
 						 belong to the group */
-					if (chown(req.sock.sun_path,-1,ctlstat.st_gid) == 0)
+					if (chown(datasock.sun_path, -1, ctlstat.st_gid) == 0)
 						mode |= 070;
 					else
 						mode |= 077;
@@ -269,20 +269,21 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 			}
 		}
 	}
-	chmod(req.sock.sun_path,mode);
+	chmod(datasock.sun_path, mode);
+	req.sock = datasock;
 
-	if (send(fdctl,&req,sizeof(req)-MAXDESCR+strlen(req.description),0)<0) 
+	if (send(fdctl, &req, sizeof(req) - MAXDESCR + strlen(req.description), 0) < 0) 
 		goto abort_deletesock;
 
-	if (recv(fdctl,&dataout,sizeof(struct sockaddr_un),0)<=0)
+	if (recv(fdctl, &datasock, sizeof(struct sockaddr_un), 0) <= 0)
 		goto abort_deletesock;
 
-	if (connect(fddata,(struct sockaddr *)&dataout,sizeof(struct sockaddr_un))<0)
+	if (connect(fddata, (struct sockaddr *)&datasock, sizeof(struct sockaddr_un)) < 0)
 		goto abort_deletesock;
 
-	chmod(dataout.sun_path,mode);
+	chmod(datasock.sun_path, mode);
 
-	if ((newconn=calloc(1,sizeof(struct vde_vde_conn)))==NULL)
+	if ((newconn=calloc(1, sizeof(struct vde_vde_conn)))==NULL)
 	{
 		errno=ENOMEM;
 		goto abort_deletesock;
@@ -302,16 +303,16 @@ abort:
 	return NULL;
 }
 
-static ssize_t vde_vde_recv(VDECONN *conn,void *buf,size_t len,int flags)
+static ssize_t vde_vde_recv(VDECONN *conn, void *buf, size_t len, int flags)
 {
 	struct vde_vde_conn *vde_conn = (struct vde_vde_conn *)conn;
-	return recv(vde_conn->fddata,buf,len,0);
+	return recv(vde_conn->fddata, buf, len, 0);
 }
 
-static ssize_t vde_vde_send(VDECONN *conn,const void *buf,size_t len,int flags)
+static ssize_t vde_vde_send(VDECONN *conn, const void *buf, size_t len, int flags)
 {
 	struct vde_vde_conn *vde_conn = (struct vde_vde_conn *)conn;
-	return send(vde_conn->fddata,buf,len,0);
+	return send(vde_conn->fddata, buf, len, 0);
 }
 
 static int vde_vde_datafd(VDECONN *conn)

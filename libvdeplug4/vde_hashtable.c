@@ -10,16 +10,21 @@ struct vde_hashtable {
 	unsigned int hash_mask;
 	uint64_t seed;
 	/* plus the table here */
+	char ht[];
 };
 
-#define hashtype(N) \
-	struct { \
-		uint64_t edst; \
-		time_t last_seen; \
-		char payload[(N)]; \
-	} 
+struct ht_elem {
+	uint64_t edst;
+	time_t last_seen;
+	char payload[];
+};
+#define sizeof_ht_elem(payload_size) (sizeof(struct ht_elem) + payload_size)
 
-static int calc_hash(uint64_t src, unsigned int hash_mask, uint64_t seed)
+static inline __attribute__((always_inline)) struct ht_elem *ht_get(struct vde_hashtable *table, int index) {
+	return (void *) (table->ht + index * sizeof_ht_elem(table->payload_size));
+}
+
+static inline __attribute__((always_inline)) int calc_hash(uint64_t src, unsigned int hash_mask, uint64_t seed)
 {
 	src ^= src >> 33 ^ seed; 
 	src *= 0xff51afd7ed558ccd; 
@@ -41,14 +46,14 @@ void *vde_find_in_hash(struct vde_hashtable *table, unsigned char *dst, int vlan
 	else {
 		uint64_t edst;
 		int index;
-		hashtype(table->payload_size) *entry = (void *) (table + 1);
+		struct ht_elem *entry;
 
 		if ((dst[0] & 1) == 1) /* broadcast */
 			return NULL;
-		edst=extmac(dst,vlan);
-		index=calc_hash(edst, table->hash_mask, table->seed);
+		edst = extmac(dst,vlan);
+		index = calc_hash(edst, table->hash_mask, table->seed);
 		//printf("index %d\n",index);
-		entry += index;
+		entry = ht_get(table, index);
 		if (entry->edst == edst && entry->last_seen >= too_old)
 			return &(entry->payload);
 		else
@@ -63,19 +68,19 @@ void vde_find_in_hash_update(struct vde_hashtable *table, unsigned char *src, in
 	else {
 		uint64_t esrc;
 		int index;
+		struct ht_elem *entry;
 
-		hashtype(table->payload_size) *entry = (void *) (table + 1);
 		if ((src[0] & 1) == 1) /* broadcast */
 			return;
 
-		esrc=extmac(src,vlan);
-		index=calc_hash(esrc, table->hash_mask, table->seed);
+		esrc = extmac(src,vlan);
+		index = calc_hash(esrc, table->hash_mask, table->seed);
 		//printf("index %d\n",index);
 
-		entry += index;
-		entry->edst=esrc;
+		entry = ht_get(table, index);
+		entry->edst = esrc;
 		memcpy(&(entry->payload),payload,table->payload_size);
-		entry->last_seen=now;
+		entry->last_seen = now;
 	}
 }
 
@@ -85,10 +90,10 @@ void vde_hash_delete(struct vde_hashtable *table, void *payload)
 		return;
 	else {
 		unsigned int i;
-		hashtype(table->payload_size) *entry = (void *) (table + 1);
 		for (i = 0; i < table->hash_mask + 1; i++) {
-			if (memcmp(&entry[i].payload, payload, table->payload_size) == 0)
-				entry[i].last_seen = 0;
+			struct ht_elem *entry =  ht_get(table, i);
+			if (memcmp(entry->payload, payload, table->payload_size) == 0)
+				entry->last_seen = 0;
 		}
 	}
 }
@@ -98,12 +103,12 @@ void vde_hash_delete(struct vde_hashtable *table, void *payload)
 struct vde_hashtable *_vde_hash_init(size_t payload_size, unsigned int hashsize, uint64_t seed)
 {
 	struct vde_hashtable *retval;
-	hashtype(payload_size) *entry;
 	if (hashsize == 0)
 		return NULL;
 	hashsize = (2 << (sizeof(hashsize) * 8 - __builtin_clz(hashsize - 1) - 1));
 
-	retval = calloc(1, sizeof(struct vde_hashtable) + hashsize * sizeof(*entry));
+	retval = calloc(1, sizeof(struct vde_hashtable) 
+			+ hashsize * sizeof_ht_elem(payload_size));
 	if (retval) {
 		retval->payload_size = payload_size;
 		retval->hash_mask = hashsize - 1;
@@ -124,7 +129,7 @@ int main() {
 	while(1) {
 		unsigned char mac[7];
 		unsigned int port;
-		scanf("%6s %d",mac,&port);
+		scanf("%6s %u",mac,&port);
 		printf("%s %d \n",mac,port);
 		if (port == 0) {
 			int *pport = vde_find_in_hash(ht, mac, 0, time(NULL)-20);

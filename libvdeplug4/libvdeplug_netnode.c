@@ -79,8 +79,8 @@ static VDECONN *vde_switch_open(char *vde_url, char *descr,int interface_version
 		struct vde_open_args *open_args);
 static VDECONN *vde_bonding_open(char *vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args);
-static ssize_t vde_netnode_recv(VDECONN *conn,void *buf,size_t len,int flags);
-static ssize_t vde_netnode_send(VDECONN *conn,const void *buf,size_t len,int flags);
+static ssize_t vde_netnode_recv(VDECONN *conn, void *buf, size_t len, int flags);
+static ssize_t vde_netnode_send(VDECONN *conn, const void *buf, size_t len, int flags);
 static int vde_netnode_datafd(VDECONN *conn);
 static int vde_netnode_ctlfd(VDECONN *conn);
 static int vde_netnode_close(VDECONN *conn);
@@ -207,7 +207,7 @@ abort:
 static void datasock_close(char *path) {
 	struct sockaddr_un sun;
 	sun.sun_family = AF_UNIX;
-	snprintf(sun.sun_path,sizeof(sun.sun_path),"%s/ctl",path);
+	snprintf(sun.sun_path, sizeof(sun.sun_path), "%s/ctl", path);
 	unlink(sun.sun_path);
 	rmdir(path);
 }
@@ -223,7 +223,7 @@ static int ctl_in(char *path, int ctl_fd) {
 	return new;
 }
 
-/* open a new connection on an accepted connection*/
+/* open a new connection on an accepted connection */
 static int conn_in(char *path, int conn_fd, mode_t mode) {
 	char reqbuf[REQBUFLEN+1];
 	struct request_v3 *req=(struct request_v3 *)reqbuf;
@@ -233,11 +233,12 @@ static int conn_in(char *path, int conn_fd, mode_t mode) {
 	if (len > 0 && req->magic == SWITCH_MAGIC && req->version == 3 &&
 			(req->type & 0xff) == REQ_NEW_CONTROL) {
 		int data_fd;
+		struct sockaddr_un sunc = req->sock;
 		struct sockaddr_un sun;
 		sun.sun_family = AF_UNIX;
 		data_fd = socket(PF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
-		connect(data_fd, (struct sockaddr *) &req->sock, sizeof(req->sock));
-		snprintf(sun.sun_path,sizeof(sun.sun_path),"%s/fd%d",path,conn_fd);
+		connect(data_fd, (struct sockaddr *) &sunc, sizeof(sunc));
+		snprintf(sun.sun_path, sizeof(sun.sun_path), "%s/fd%d", path, conn_fd);
 		unlink(sun.sun_path);
 		bind(data_fd, (struct sockaddr *) &sun, sizeof(sun));
 		if (mode > 0)
@@ -293,12 +294,12 @@ static VDECONN *vde_netnode_open(char *vde_url, char *descr,int interface_versio
 	char *hashseedstr = NULL;
 	char *expiretimestr = NULL;
 	struct vdeparms parms[] = {
-		{"mode",&modestr},
-		{"dirmode",&dirmodestr},
-		{"grp",&grpstr},
-		{"hashsize",&hashsizestr},
-		{"hashseed",&hashseedstr},
-		{"expiretime",&expiretimestr},
+		{"mode", &modestr},
+		{"dirmode", &dirmodestr},
+		{"grp", &grpstr},
+		{"hashsize", &hashsizestr},
+		{"hashseed", &hashseedstr},
+		{"expiretime", &expiretimestr},
 		{NULL, NULL}};
 	int mode = STDMODE;
 	int dirmode = STDDIRMODE;
@@ -422,20 +423,20 @@ static inline int eth_vlan(const void *buf,size_t len) {
 }
 
 /* get the source MAC from an Ethernet packet */
-static inline uint8_t *eth_shost(const void *buf,size_t len) {
+static inline uint8_t *eth_shost(const void *buf, size_t len) {
 	struct ether_header *ethh = (void *) buf;
 	return ethh->ether_shost;
 }
 
 /* get the destination MAC from an Ethernet packet */
-static inline uint8_t *eth_dhost(const void *buf,size_t len) {
+static inline uint8_t *eth_dhost(const void *buf, size_t len) {
 	struct ether_header *ethh = (void *) buf;
 	return ethh->ether_dhost;
 }
 
 /* receive a packet (from one of the connected node, i.e. there is a pending 
 	 epoll event */
-static ssize_t vde_netnode_recv(VDECONN *conn,void *buf,size_t len,int flags)
+static ssize_t vde_netnode_recv(VDECONN *conn, void *buf, size_t len, int flags)
 {
 	struct epoll_event event;
 	ssize_t retval = 1;
@@ -507,7 +508,7 @@ static ssize_t vde_netnode_recv(VDECONN *conn,void *buf,size_t len,int flags)
 				close(fd);
 				close(fd2);
 				sun.sun_family = AF_UNIX;
-				snprintf(sun.sun_path,sizeof(sun.sun_path),"%s/fd%d",vde_conn->path,fd);
+				snprintf(sun.sun_path, sizeof(sun.sun_path), "%s/fd%d",vde_conn->path,fd);
 				unlink(sun.sun_path);
 			}
 		}
@@ -516,7 +517,7 @@ static ssize_t vde_netnode_recv(VDECONN *conn,void *buf,size_t len,int flags)
 }
 
 /* There is an avent coming from the host */
-static ssize_t vde_netnode_send(VDECONN *conn,const void *buf,size_t len,int flags)
+static ssize_t vde_netnode_send(VDECONN *conn, const void *buf, size_t len, int flags)
 {
 	if (__builtin_expect(len >= sizeof(struct ether_header), 1)) {
 		int i;
@@ -573,7 +574,7 @@ static int vde_netnode_close(VDECONN *conn)
 		close(fd);
 		close(fd2);
 		sun.sun_family = AF_UNIX;
-		snprintf(sun.sun_path,sizeof(sun.sun_path),"%s/fd%d",vde_conn->path,fd);
+		snprintf(sun.sun_path,sizeof(sun.sun_path), "%s/fd%d", vde_conn->path,fd);
 		unlink(sun.sun_path);
 	}
 	datasock_close(vde_conn->path);
