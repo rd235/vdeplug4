@@ -13,7 +13,7 @@ include_directories(
 )
 
 include(CheckIncludeFile)
-set(LIBS_REQUIRED vdeplug)
+set(LIBS_REQUIRED execs)
 
 foreach(THISLIB IN LISTS LIBS_REQUIRED)
   find_library(LIB${THISLIB}_OK ${THISLIB})
@@ -28,3 +28,6 @@ add_subdirectory(libvdeplug4_static)
 add_subdirectory(include)
 add_subdirectory(doc)
 add_subdirectory(man)
+
+add_custom_target(uninstall
+	"${CMAKE_COMMAND}" -P "${PROJECT_SOURCE_DIR}/Uninstall.cmake")
