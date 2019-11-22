@@ -73,3 +73,7 @@ available and accepting the syntax of the parameters after '//'
 
 Other modules can be added. Vdeplug4 includes the header file and a support library to implement further plugins.
 
+## Credits:
+
+Mattia Biondi largely contibuted to the conversion from autotools to cmake. (2019)
+
