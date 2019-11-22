@@ -53,10 +53,16 @@ add_library(vdeplug_seqpacket SHARED libvdeplug_seqpacket.c)
 target_link_libraries(vdeplug_seqpacket vdeplug_mod)
 
 install(
-        TARGETS vdeplug_mod vdeplug vdeplug_vde vdeplug_ptp vdeplug_tap
+        TARGETS vdeplug_mod vdeplug
+        LIBRARY
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		)
+
+install(
+        TARGETS vdeplug_vde vdeplug_ptp vdeplug_tap
                 vdeplug_udp vdeplug_vxlan vdeplug_vxvde vdeplug_cmd
                 vdeplug_null vdeplug_hub vdeplug_switch vdeplug_multi
                 vdeplug_bonding vdeplug_seqpacket
         LIBRARY
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/vdeplug
 		)
