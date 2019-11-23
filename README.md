@@ -7,8 +7,9 @@ Vdeplug4 is a new perspective on virtual networking.
 
 Install vdeplug4:
 ```
-$ autoreconf -if
-$ ./configure
+$ mkdir build
+$ cd build
+$ cmake ..
 $ make
 $ sudo make install
 ```
