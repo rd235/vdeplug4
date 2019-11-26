@@ -7,11 +7,11 @@ Vdeplug4 is a new perspective on virtual networking.
 
 Install vdeplug4:
 ```
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
-$ sudo make install
+ $ mkdir build
+ $ cd build
+ $ cmake ..
+ $ make
+ $ sudo make install
 ```
 
 Start several VM *on different hosts on the same LAN* (IP ttl must be 1).
@@ -19,11 +19,11 @@ Start several VM *on different hosts on the same LAN* (IP ttl must be 1).
 
 e.g. kvm:
 ```
-kvm .... -net nic,macaddr=52:54:00:11:22:11 -net vde,sock=vxvde://
-kvm .... -net nic,macaddr=52:54:00:11:22:22 -net vde,sock=vxvde://
-kvm .... -net nic,macaddr=52:54:00:11:22:33 -net vde,sock=vxvde://
-kvm .... -net nic,macaddr=52:54:00:11:22:44 -net vde,sock=vxvde://
-kvm .... -net nic,macaddr=52:54:00:11:22:55 -net vde,sock=vxvde://
+ kvm .... -net nic,macaddr=52:54:00:11:22:11 -net vde,sock=vxvde://
+ kvm .... -net nic,macaddr=52:54:00:11:22:22 -net vde,sock=vxvde://
+ kvm .... -net nic,macaddr=52:54:00:11:22:33 -net vde,sock=vxvde://
+ kvm .... -net nic,macaddr=52:54:00:11:22:44 -net vde,sock=vxvde://
+ kvm .... -net nic,macaddr=52:54:00:11:22:55 -net vde,sock=vxvde://
 ```
 
 All the VM will be automagically on the same Virtual LAN.
