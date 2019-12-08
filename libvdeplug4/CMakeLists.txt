@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.13)
   
-set(VDEPPLUG_SOVERSION 2)
+set(VDEPLUG_SOVERSION 2)
 add_library(vdeplug SHARED libvdeplug.c libvdestream.c)
 set_target_properties(vdeplug PROPERTIES VERSION ${PROJECT_VERSION}
-    SOVERSION ${VDEPPLUG_SOVERSION})
+    SOVERSION $VDEPPLUG_SOVERSION})
 target_link_libraries(vdeplug -ldl)
 target_link_libraries(vdeplug -export-dynamic)
 
 add_library(vdeplug_mod SHARED parseparms.c vde_hashtable.c)
 set_target_properties(vdeplug_mod PROPERTIES VERSION ${PROJECT_VERSION}
-		SOVERSION ${PROJECT_VERSION_MAJOR})
+    SOVERSION $PROJECT_VERSION_MAJOR})
 target_link_libraries(vdeplug_mod -ldl)
 target_link_libraries(vdeplug_mod -export-dynamic)
 
