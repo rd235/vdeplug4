@@ -550,6 +550,7 @@ static ssize_t vde_vxvde_recv(VDECONN *conn,void *buf,size_t len,int flags) {
 														}
 													}
 												}
+												break;
 					case AF_INET6: {
 													 /* workaround: there is not (yet) an ancillary msg for IPv6 returning
 															the IP address of the local interface where the packet was received,
@@ -568,6 +569,7 @@ static ssize_t vde_vxvde_recv(VDECONN *conn,void *buf,size_t len,int flags) {
 														 }
 													 }
 												 }
+												break;
 				}
 			}
 			vde_find_in_hash_update(vde_conn->table, ehdr->src, 1, msg.msg_name, time(NULL));
