@@ -275,6 +275,9 @@ static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 	in_port_t uniport;
 	unsigned int ifindex = 0;
 
+	if (vde_parseparms(vde_url, parms) != 0)
+		return NULL;
+
 	memset(&hints, 0, sizeof(struct addrinfo));
 	/* Allow IPv4 or IPv6 if either none or both options v4/v6 were selected*/
 	switch (((!!v6str) << 1) | (!!v4str)) {
@@ -285,8 +288,6 @@ static VDECONN *vde_vxvde_open(char *vde_url, char *descr,int interface_version,
 	}
 	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
 	hints.ai_protocol = 0;          /* Any protocol */
-	if (vde_parseparms(vde_url, parms) != 0)
-		return NULL;
 	ttl = atoi(ttlstr);
 	vni = vde_grnam2gid(vnistr);
 	grp = vde_grnam2gid(grpstr);
