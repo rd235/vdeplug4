@@ -43,7 +43,7 @@ The default module is \fBlibvdeplug_vde(1)\fR (connection to a \fBvde_switch(1)\
 and can be omitted. e.g. \fB/home/user/myswitch\fR means
 \fBvde:///home/user/myswitch\fR
 
-\fBvde_open\fR opens a VDE connection: \fIvde_url\fR is the vde network identifier as descibed here above
+\fBvde_open\fR opens a VDE connection: \fIvde_url\fR is the vde network identifier as described here above
 and \fIdescr\fR is a description of this connection (it can be useful to identify this connection in
 the port list of a switch). \fRopen_args\fR has been left for backwards compatibility but can be safely
 set to NULL as all the options previosly defined as fields of \fIstruct vde_open_args\fR are now 
@@ -60,7 +60,7 @@ parameters of the VDE modules (can be defined using a module specific syntax in 
 \fBvde_ctlfd\fR returns the control file descriptor of the connection. Not all the modules support control
 descritors, but when it is valid descriptor (greater or equal than 0) can be used to check if the remote 
 endpoint (switch or peer) hanged up. No data can be sent or received using the control file descriptor, 
-it returns an end-of-file condition when the conenction get closed (zero length on reading).
+it returns an end-of-file condition when the connection get closed (zero length on reading).
 
 \fBvde_close\fR closes a vde connections.
 
