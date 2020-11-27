@@ -24,7 +24,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
-#include <pwd.h>
 #include <dlfcn.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -136,28 +135,15 @@ static VDECONN *vde_open_module(char *modname, struct vde_open_parms *parms) {
 	}
 }
 
-static inline size_t getpw_bufsize(void) {
-	size_t bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
-	return bufsize > 0 ? bufsize : PATH_MAX;
-}
-
 static void set_newdescr(const char *descr, char *newdescr, size_t newdescrlen) {
 	char *ssh_client = getenv("SSH_CLIENT");
 	int pid = getpid();
 	uid_t uid = geteuid();
-	struct passwd pwd;
-	struct passwd *callerpwd;
-	size_t bufsize = getpw_bufsize();
-	char buf[bufsize];
 	FILE *f = fmemopen(newdescr, newdescrlen, "w");
 
 	fprintf(f, "%s ", descr);
 
-	getpwuid_r(uid, &pwd, buf, bufsize, &callerpwd);
-	if (callerpwd)
-		fprintf(f, "user=%s", callerpwd->pw_name);
-	else
-		fprintf(f, "user=%d", uid);
+	fprintf(f, "user=%d", uid);
 	fprintf(f, " pid=%d", pid);
 
 	if (ssh_client) {
