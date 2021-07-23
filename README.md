@@ -60,7 +60,8 @@ Several plug-ins are provided as standard extensions of the library (batteries i
 - vxvde: this plug-in implements distributed virtual switches
 - udp: udp tunnelling
 
-The address of a virtual network is defined by a syntax similar to web URLs.
+The address of a virtual network is defined by a *Virtual Network Locator* (VNL), a string
+whose syntax is similar to web URLs.
 
 examples:
 ```
