@@ -21,7 +21,7 @@ vde_open, vde_recv, vde_send, vde_send, vde_recv, vde_close \- connect clients t
 .SH SYNOPSIS
 .B #include <libvdeplug.h>
 .br
-.BI "VDECONN *vde_open(char *vde_url,char *descr, struct vde_open_args *open_args);"
+.BI "VDECONN *vde_open(char *vnl,char *descr, struct vde_open_args *open_args);"
 .br
 .BI "ssize_t vde_recv(VDECONN *conn,void *buf,size_t len,int flags);"
 .br
@@ -36,18 +36,18 @@ vde_open, vde_recv, vde_send, vde_send, vde_recv, vde_close \- connect clients t
 These functions are provided by libvdeplug. Link with \fI-lvdeplug\fR.
 .SH DESCRIPTION
 Libvdeplug is the library used by clients to join a VDE network. It is a generic library which can
-use several different implementations for virtual distributed networks. In fact \fIvde_url\fR 
+use several different implementations for virtual distributed networks. In fact the Virtual Network Locator (VNL) \fIvnl\fR 
 has the syntax \fImodule\fB://\fIspecific_address\fR.
 e.g. \fBvde:///home/user/myswitch\fR or \fBvxvde://239.0.0.1\fR.
 The default module is \fBlibvdeplug_vde(1)\fR (connection to a \fBvde_switch(1)\fR)
 and can be omitted. e.g. \fB/home/user/myswitch\fR means
 \fBvde:///home/user/myswitch\fR
 
-\fBvde_open\fR opens a VDE connection: \fIvde_url\fR is the vde network identifier as described here above
+\fBvde_open\fR opens a VDE connection: \fIvnl\fR is the vde network identifier as described here above
 and \fIdescr\fR is a description of this connection (it can be useful to identify this connection in
 the port list of a switch). \fRopen_args\fR has been left for backwards compatibility but can be safely
 set to NULL as all the options previosly defined as fields of \fIstruct vde_open_args\fR are now 
-parameters of the VDE modules (can be defined using a module specific syntax in vde_url).
+parameters of the VDE modules (can be defined using a module specific syntax in VNL).
 
 \fBvde_recv\fR receives a packet from the VDE connection.
 

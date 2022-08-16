@@ -42,13 +42,13 @@ struct vde_open_args {
 };
 	
 /* vde_open args:
- *   vde_url: switch id (module://parameters or path)
+ *   vnl: virtual network locator (module://parameters or path)
  *            e.g. vde:// vde:///var/run/vde.ctl vxvde:// tap://tap0
  *   descr: description (it will appear in the port description on the switch)
  */
-#define vde_open(vde_url,descr,open_args) \
-	vde_open_real((vde_url),(descr),LIBVDEPLUG_INTERFACE_VERSION,(open_args))
-VDECONN *vde_open_real(char *vde_url,char *descr,int interface_version,
+#define vde_open(vnl,descr,open_args) \
+	vde_open_real((vnl),(descr),LIBVDEPLUG_INTERFACE_VERSION,(open_args))
+VDECONN *vde_open_real(char *vnl,char *descr,int interface_version,
 	struct vde_open_args *open_args);
 
 ssize_t vde_recv(VDECONN *conn,void *buf,size_t len,int flags);

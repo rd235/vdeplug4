@@ -214,7 +214,12 @@ static VDECONN *vde_vde_open(char *given_vde_url, char *descr,int interface_vers
 	do
 	{
 		/* Here vde_url is the last successful one in the previous step. */
-		snprintf(datasock.sun_path, sizeof(datasock.sun_path), "%s/.%05d-%05d", vde_url, pid, sockno++);
+#pragma GCC diagnostic push
+		/* disable format-truncation: it is the meaning of using snprintf! */
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+		snprintf(datasock.sun_path, sizeof(datasock.sun_path),
+				"%s/.%05d-%05d", vde_url, pid, sockno++);
+#pragma GCC diagnostic pop
 		res=bind(fddata, (struct sockaddr *) &datasock, sizeof (datasock));
 	}
 	while (res < 0 && errno == EADDRINUSE);

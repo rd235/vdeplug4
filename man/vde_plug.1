@@ -2,24 +2,24 @@
 .SH NAME
 vde_plug \- Virtual Distributed Ethernet plug (two plugs creates a vde cable)
 .SH SYNOPSIS
-.B vde_plug 
-[ 
-.I OPTIONS  
-] 
+.B vde_plug
 [
-.I vde_plug_url
+.I OPTIONS
+]
+[
+.I VNL
 ]
 .br
 .B vde_plug
 [
-.I OPTIONS     
+.I OPTIONS
 ]
-.I vde_plug_url
-.I vde_plug_url
+.I VNL
+.I VNL
 .br
 .B vde_plug
 [
-.I OPTIONS     
+.I OPTIONS
 ]
 .B =
 .I command
@@ -29,9 +29,9 @@ vde_plug \- Virtual Distributed Ethernet plug (two plugs creates a vde cable)
 .br
 .B vde_plug
 [
-.I OPTIONS  
-] 
-.I vde_plug_url
+.I OPTIONS
+]
+.I VNL
 .B =
 .I command
 [
@@ -40,26 +40,26 @@ vde_plug \- Virtual Distributed Ethernet plug (two plugs creates a vde cable)
 .br
 .SH DESCRIPTION
 A
-\fBvde_plug\fR 
+\fBvde_plug\fR
 is a plug to be connected into a VDE network.
 
-VDE network sockets are named using the vde_plug_url syntax, i.e.
-\fImodule\fB://\fIspecific_address\fR.
+VDE network sockets are named using the Virtual Network Locator (VNL)
+syntax, i.e.  \fImodule\fB://\fIspecific_address\fR.
 e.g. \fBvde:///home/user/myswitch\fR or \fBvxvde://239.0.0.1\fR.
 The default module is \fBlibvdeplug_vde(1)\fR (connection to a \fBvde_switch(1)\fR)
 and can be omitted. e.g. \fB/home/user/myswitch\fR means
 \fBvde:///home/user/myswitch\fR
 
-\fBvde_plug\fR can have zero, one or two vde_plug_url arguments.
+\fBvde_plug\fR can have zero, one or two VNL arguments.
 In case of zero or one argument the network communication is converted in
 a byte stream. Packets from the VDE network are sent to stdout and bytes
 from stdin are converted into packets and injected in the VDE network.
-When a vde_plug_url is omitted or it is an empty argument
+When a VNL is omitted or it is an empty argument
 (\fB''\fR) \fBvde_plug\fR tries to connect to a
 default network (defined by the user in \fB$HOME/.vde2/default.switch\fR
 otherwise \fBvde:///run/vde.ctl\fR or \fBvde:///tmp/vde.ctl\fR).
 
-This tool has been designed to be used together with 
+This tool has been designed to be used together with
 .B dpipe (1)
 to interconnect a second vde_plug to another switch, working as a
 virtual ethernet crossed cable between the two switches.
@@ -73,7 +73,7 @@ connects two local switches: the former is using the standard control socket /tm
 (or /var/run/vde.ctl) while the latter is using /tmp/vde2.ctl.
 
 \fBvde_plug\fR creates a virtual cable between to VDE networks
-when two vde_plug_url arguments are present in the command line. 
+when two VNL arguments are present in the command line.
 The previous command is equivalent to:
 .RS
 .br
@@ -96,10 +96,10 @@ If for example the two vde_switches run as daemon and they are connected to tap 
 a level 2 encrypted tunnel is established.
 
 While \fBdpipe\fR supports more complex vitrual network structures (e.g. including \fBwirefilter(1)\fR to
-emulate network conditions) \fBvde_plug\fR has been designed to provide simple syntax options 
+emulate network conditions) \fBvde_plug\fR has been designed to provide simple syntax options
 to implement the most common virtual network scenarios.
 It is possible to use an equal sign (\fB=\fR) followed by a command and its optional
-arguments in place of the second vde_plug_url.
+arguments in place of the second VNL.
 In this case the packets from/to the network are converted into a bidirectional byte stream
 provided as stdin and stdout to the command.
 The previous command have the same effect of:
@@ -107,7 +107,7 @@ The previous command have the same effect of:
 .br
 .B vde_plug = ssh remote.machine.org vde_plug
 .RE
-(the first vde_plug_url is omitted).
+(the first VNL is omitted).
 
 This example:
 .RS
@@ -151,9 +151,9 @@ log START/STOP of vde_plug on syslog
 .TQ
 \fB\-\-iplog
 log START/STOP of vde_plug and the IP addresses of hosts seen on the stream
-(or on the second vde_plug_url) on syslog.
+(or on the second VNL) on syslog.
 .TP
-\fB\-\-port "\fIportnum\fP" 
+\fB\-\-port "\fIportnum\fP"
 Obsolete option, use the syntax of the libvdeplug_vde module instead,
 add the port number in square brackets suffix (e.g. \fBvde://tmp/myswitch[10]\fR).
 It is possible to decide which port of the switch to use.
@@ -174,21 +174,21 @@ group ownership of the communication socket. For security when more
 want to share a switch it is better to use a unix group to own the comm sockets
 so that the network traffic cannot be sniffed.
 .TP
-\fB\-m \fIoctal-mode\fR 
+\fB\-m \fIoctal-mode\fR
 .TQ
-\fB\-\-mod \fIoctal-mode\fR 
+\fB\-\-mod \fIoctal-mode\fR
 octal chmod like permissions for the comm sockets
 .TP
 \fB\-G \-M
 .TQ
-\fB\-\-port2 \-\-group2 \-\-mod2 
-These options, valid in the syntax with two vde_plug_urls, have the the same meaning of \-p \-g \-m.
-The uppercase options or the long options with a trailing 2 refer to the second vde_plug_url.
+\fB\-\-port2 \-\-group2 \-\-mod2
+These options, valid in the syntax with two VNLs, have the the same meaning of \-p \-g \-m.
+The uppercase options or the long options with a trailing 2 refer to the second VNL.
 .TP
 \fB\-D\fR \fIDESCR
 .TQ
 \fB\-\-descr\fR \fIDESCR
-set the description of this connection to \fIDESCR\fR (e.g. port/print command on a 
+set the description of this connection to \fIDESCR\fR (e.g. port/print command on a
 vde_switch shows this description).
 
 
