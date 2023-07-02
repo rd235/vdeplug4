@@ -215,7 +215,7 @@ int vde_parseparms(char *str, struct vdeparms *parms){
 					}
 				}
 				if (scan->tag == NULL) {
-					fprintf(stderr, "unknwown key: %*.*s\n", taglen, taglen, elem);
+					fprintf(stderr, "unknown key: %*.*s\n", taglen, taglen, elem);
 					errno = EINVAL;
 					return -1;
 				}
@@ -247,7 +247,7 @@ int vde_parsepathparms(char *str, struct vdeparms *parms){
 					if (eq == NULL && parms->tag != NULL && parms->tag[0] == 0)
 						*(parms->value) = elem;
 					else {
-						fprintf(stderr, "unknwown key: %*.*s\n", taglen, taglen, elem);
+						fprintf(stderr, "unknown key: %*.*s\n", taglen, taglen, elem);
 						errno = EINVAL;
 						return -1;
 					}
