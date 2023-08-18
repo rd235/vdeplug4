@@ -12,13 +12,17 @@ This module of libvdeplug4 can be used in any program supporting vde like
 The vde_plug_url syntax of this module is the following:
 .RS
 .br
-\fBmacvtap://\fIpathname_of_the_macvtap_interface\fR
+\fBmacvtap://\fImacvtap_interface_name\fR
 .RE
 
 .SH EXAMPLES
-.B macvtap:///dev/tap4
+.B macvtap://macvlan0
 .br
-This vde_plug_url refers the tap interface \fB/dev/tap4\fR.
+This vde_plug_url refers the macvtap interface named \fBmacvlan0\fR, for instance created by
+the command:
+.br
+.B ip link add link eth0 name macvlan0 type macvtap mode bridge
+
 .SH NOTICE
 Virtual Distributed Ethernet is not related in any way with
 www.vde.com ("Verband der Elektrotechnik, Elektronik und Informationstechnik"
