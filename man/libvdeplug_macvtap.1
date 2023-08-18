@@ -1,26 +1,24 @@
-.TH LIBVDEPLUG_PTP 1 "August 23, 2016" "Virtual Distributed Ethernet"
+.TH LIBVDEPLUG_MACVTAP 1 "August 18, 2023" "Virtual Distributed Ethernet"
 .SH NAME
-libvdeplug_ptp - vdeplug module for point to point connections
+libvdeplug_macvtap - vdeplug module: macvtap interface 
 .SH SYNOPSIS
-libvdeplug_ptp.so
+libvdeplug_macvtap.so
 .SH DESCRIPTION
-This module interconnects two vde supporting tools by a point to point
-communication line.
+This is the standard vdeplug module to connect a MACVTAP interface.
 This module of libvdeplug4 can be used in any program supporting vde like
 \fBvde_plug\fR, \fBkvm\fR, \fBqemu\fR, \fBuser-mode-linux\fR and \fBvirtualbox\fR.
+\fBtunctl\fR or \fBvde_tunctl\fR can be used to  preconfigure a TAP device for use by a particular user.
 
 The vde_plug_url syntax of this module is the following:
 .RS
 .br
-\fBptp://\fIpath_of_the_socket\fR
+\fBmacvtap://\fIpathname_of_the_macvtap_interface\fR
 .RE
 
 .SH EXAMPLES
-.B ptp:///tmp/sock
+.B macvtap:///dev/tap4
 .br
-The same vde_plug_url can be used at both ends of the connection.
-The first program creates the socket \fB/tmp/sock\fR. The second program connects to
-\fB/tmp/sock\fR, when it discovers that the socket already exists.
+This vde_plug_url refers the tap interface \fB/dev/tap4\fR.
 .SH NOTICE
 Virtual Distributed Ethernet is not related in any way with
 www.vde.com ("Verband der Elektrotechnik, Elektronik und Informationstechnik"
