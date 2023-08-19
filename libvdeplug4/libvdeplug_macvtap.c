@@ -51,24 +51,14 @@ struct vde_macvtap_conn {
 	int fddata;
 };
 
-static int get_ifindex(char *iface) {
-	int fd = socket(AF_INET, SOCK_DGRAM, 0);
-  struct ifreq ifr = {0};
-  snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", iface);
-	if (ioctl(fd, SIOCGIFINDEX, &ifr) < 0)
-		return -1;
-	else
-		return ifr.ifr_ifindex;
-}
-
 static VDECONN *vde_macvtap_open(char *given_vde_url, char *descr, int interface_version,
 		struct vde_open_args *open_args)
 {
 	struct ifreq ifr;
 	int fddata=-1;
 	struct vde_macvtap_conn *newconn;
-	int ifindex = get_ifindex(given_vde_url);
-	if (ifindex < 0)
+	int ifindex = if_nametoindex(given_vde_url);
+	if (ifindex == 0)
 		return NULL;
 	size_t tap_path_len = snprintf(NULL, 0, "/dev/tap%d", ifindex) + 1;
 	char tap_path[tap_path_len];
