@@ -258,20 +258,20 @@ static ssize_t vde_ptp_send(VDECONN *conn,const void *buf,size_t len,int flags)
 	struct vde_ptp_conn *vde_conn = (struct vde_ptp_conn *)conn;
 #ifdef CONNECTED_P2P
 	ssize_t retval;
-	if (__builtin_expect(((retval=send(vde_conn->fddata,buf,len,0)) >= 0),1))
+	if (__builtin_expect(((retval=send(vde_conn->fddata,buf,len,MSG_DONTWAIT)) >= 0),1))
 		return retval;
 	else {
-		if (__builtin_expect(errno == ENOTCONN || errno == EDESTADDRREQ,0)) {
+		if (__builtin_expect(errno == ENOTCONN || errno == EDESTADDRREQ,MSG_DONTWAIT)) {
 			if (__builtin_expect(vde_conn->outsock != NULL,1)) {
 				connect(vde_conn->fddata, vde_conn->outsock,vde_conn->outlen);
-				return send(vde_conn->fddata,buf,len,0);
+				return send(vde_conn->fddata,buf,len,MSG_DONTWAIT);
 			} else
 				return retval;
 		} else
 			return retval;
 	}
 #else
-	return sendto(vde_conn->fddata,buf,len,0, vde_conn->outsock,vde_conn->outlen);
+	return sendto(vde_conn->fddata,buf,len,MSG_DONTWAIT, vde_conn->outsock,vde_conn->outlen);
 #endif
 }
 
