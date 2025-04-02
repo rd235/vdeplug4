@@ -65,6 +65,8 @@ int vde_ctlfd(VDECONN *conn);
 
 int vde_close(VDECONN *conn);
 
+int vde_pollhup_handler(VDECONN *conn);
+
 /* vdestream */
 
 struct vdestream;

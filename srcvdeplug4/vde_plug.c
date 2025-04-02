@@ -129,9 +129,16 @@ int plug2stream(void) {
 
 	for(;;) {
 		poll(pollv,3,-1);
-		if (__builtin_expect(((pollv[0].revents | pollv[1].revents | pollv[2].revents) & POLLHUP ||
+		if (__builtin_expect(((pollv[0].revents | pollv[2].revents) & POLLHUP ||
 						pollv[2].revents & POLLIN),0))
 			break;
+
+    if (pollv[1].revents & (POLLHUP | POLLNVAL)) {
+      if (vde_pollhup_handler(conn) < 0) {
+        break;
+      } 
+      continue;
+    }
 		if (pollv[0].revents & POLLIN) {
 			nx = read(STDIN_FILENO,bufin,sizeof(bufin));
 			/* if POLLIN but not data it means that the stream has been
@@ -194,9 +201,24 @@ int plug2plug(void)
 
 	for(;;) {
 		poll(pollv,4,-1);
-		if ((pollv[0].revents | pollv[1].revents | pollv[2].revents | pollv[2].revents) & POLLHUP ||
+		if ((pollv[2].revents | pollv[2].revents) & POLLHUP ||
 				(pollv[2].revents | pollv[3].revents) & POLLIN)
 			break;
+
+    if (pollv[0].revents & (POLLHUP | POLLNVAL)) {
+      if (vde_pollhup_handler(conn) < 0) {
+        break;
+      } 
+      continue;
+    }
+
+    if (pollv[1].revents & (POLLHUP | POLLNVAL)) {
+      if (vde_pollhup_handler(conn2) < 0) {
+        break;
+      } 
+      continue;
+    }
+
 		if (pollv[0].revents & POLLIN) {
 			nx = vde_recv(conn, bufin, VDE_ETHBUFSIZE,0);
 			if (__builtin_expect((nx >= ETH_HDRLEN),1)) {
