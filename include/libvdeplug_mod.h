@@ -24,7 +24,7 @@ struct vdeplug_module {
 	int (* vde_datafd)(VDECONN *conn);
 	int (* vde_ctlfd)(VDECONN *conn);
 	int (* vde_close)(VDECONN *conn);
-  int (* vde_pollhup_handler)(VDECONN *conn);
+	int (* vde_pollhup_handler)(VDECONN *conn);
 };
 
 struct vdeparms {

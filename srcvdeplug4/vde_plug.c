@@ -133,12 +133,12 @@ int plug2stream(void) {
 						pollv[2].revents & POLLIN),0))
 			break;
 
-    if (pollv[1].revents & (POLLHUP | POLLNVAL)) {
-      if (vde_pollhup_handler(conn) < 0) {
-        break;
-      } 
-      continue;
-    }
+		if (pollv[1].revents & (POLLHUP | POLLNVAL)) {
+			if (vde_pollhup_handler(conn) < 0) {
+				break;
+			} 
+			continue;
+		}
 		if (pollv[0].revents & POLLIN) {
 			nx = read(STDIN_FILENO,bufin,sizeof(bufin));
 			/* if POLLIN but not data it means that the stream has been
@@ -205,19 +205,19 @@ int plug2plug(void)
 				(pollv[2].revents | pollv[3].revents) & POLLIN)
 			break;
 
-    if (pollv[0].revents & (POLLHUP | POLLNVAL)) {
-      if (vde_pollhup_handler(conn) < 0) {
-        break;
-      } 
-      continue;
-    }
+		if (pollv[0].revents & (POLLHUP | POLLNVAL)) {
+			if (vde_pollhup_handler(conn) < 0) {
+				break;
+			} 
+			continue;
+		}
 
-    if (pollv[1].revents & (POLLHUP | POLLNVAL)) {
-      if (vde_pollhup_handler(conn2) < 0) {
-        break;
-      } 
-      continue;
-    }
+		if (pollv[1].revents & (POLLHUP | POLLNVAL)) {
+			if (vde_pollhup_handler(conn2) < 0) {
+				break;
+			} 
+			continue;
+		}
 
 		if (pollv[0].revents & POLLIN) {
 			nx = vde_recv(conn, bufin, VDE_ETHBUFSIZE,0);

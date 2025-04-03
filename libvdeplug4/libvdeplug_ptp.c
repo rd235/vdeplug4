@@ -49,7 +49,7 @@ struct vdeplug_module vdeplug_ops={
 	.vde_datafd=vde_ptp_datafd,
 	.vde_ctlfd=vde_ptp_ctlfd,
 	.vde_close=vde_ptp_close,
-  .vde_pollhup_handler=vde_ptp_pollhup_handler
+	.vde_pollhup_handler=vde_ptp_pollhup_handler
 };
 
 struct vde_ptp_conn {
@@ -57,12 +57,11 @@ struct vde_ptp_conn {
 	struct vdeplug_module *module;
 	int fddata;
 	char *inpath;
-	/*struct sockaddr *outsock;*/
 	size_t outlen;
 
-  int fdbind;
-  int listening;
-  int server;
+	int fdbind;
+	int listening;
+	int server;
 };
 
 #define UNUSED(...) (void)(__VA_ARGS__)
@@ -75,7 +74,6 @@ static VDECONN *vde_ptp_open_real(char *given_vde_url, char *descr,int interface
 	mode_t mode=0700;
 	int fddata=-1;
 	struct sockaddr_un sockun;
-	/*struct sockaddr_un sockout;*/
 	struct stat sockstat;
 	int res;
 	struct vde_ptp_conn *newconn;
@@ -107,33 +105,31 @@ static VDECONN *vde_ptp_open_real(char *given_vde_url, char *descr,int interface
 	/* the socket already exists */
 	if(stat(sockun.sun_path,&sockstat) == 0) {
 		if (S_ISSOCK(sockstat.st_mode)) {
-			/* the socket is already in use */
 			res = connect(fddata, (struct sockaddr *) &sockun, sizeof(sockun));
 			if (res < 0) {
-				// errno = EADDRINUSE;
+				/* the socket is already in use */
+				errno = EADDRINUSE;
 				goto abort;
 			}
 			/*if (errno == ECONNREFUSED)*/
 			/*	unlink(sockun.sun_path);*/
 		}
 
-    newconn->server = 0;
-    newconn->listening = 0;
+		newconn->server = 0;
+		newconn->listening = 0;
 	} else {
-    res = bind(fddata, (struct sockaddr *) &sockun, sizeof(sockun));
-    if (res < 0)
-      goto abort;
+		res = bind(fddata, (struct sockaddr *) &sockun, sizeof(sockun));
+		if (res < 0)
+			goto abort;
 
-    res = listen(fddata, 0);
-    if (res < 0)
-      goto abort;
+		res = listen(fddata, 0);
+		if (res < 0)
+			goto abort;
 
-    newconn->server = 1;
-    newconn->listening = 1;
-  }
-	/*memset(&sockout, 0, sizeof(sockun));*/
-	/*sockout.sun_family = AF_UNIX;*/
-	/*snprintf(sockout.sun_path, sizeof(sockun.sun_path), "%s+", given_vde_url);*/
+		newconn->server = 1;
+		newconn->listening = 1;
+	}
+
 	if (group) {
 		struct group *gs;
 		gid_t gid;
@@ -149,8 +145,6 @@ static VDECONN *vde_ptp_open_real(char *given_vde_url, char *descr,int interface
 	newconn->fddata=fddata;
 	newconn->inpath=strdup(sockun.sun_path);
 	newconn->outlen = sizeof(struct sockaddr_un);
-	/*newconn->outsock=malloc(newconn->outlen);*/
-	/*memcpy(newconn->outsock,&sockout,sizeof(struct sockaddr_un));*/
 
 	return (VDECONN *)newconn;
 
@@ -162,54 +156,46 @@ abort:
 static VDECONN *vde_ptp_open(char *given_vde_url, char *descr,int interface_version,
 		    struct vde_open_args *open_args)
 {
-  VDECONN *rv;
-  rv=vde_ptp_open_real(given_vde_url, descr, interface_version, open_args);
-  /*if (!rv)*/
-  /*  rv=vde_ptpm_open(given_vde_url, descr, interface_version, open_args);*/
+	VDECONN *rv;
+	rv = vde_ptp_open_real(given_vde_url, descr, interface_version, open_args);
 
-  if (((struct vde_ptp_conn*)rv)->listening) {
-    ((struct vde_ptp_conn*)rv)->fdbind = ((struct vde_ptp_conn*)rv)->fddata;
+	if (((struct vde_ptp_conn*)rv)->listening) {
+		((struct vde_ptp_conn*)rv)->fdbind = ((struct vde_ptp_conn*)rv)->fddata;
 
-    int fakefd = open("/dev/null", O_RDWR);
-    if (fakefd < 0)
-      return NULL;
+		int fakefd = open("/dev/null", O_RDWR);
+		if (fakefd < 0)
+			return NULL;
 
-    if (dup2(((struct vde_ptp_conn*)rv)->fdbind, fakefd) < 0 ) {
-      return NULL;
-    }
+		if (dup2(((struct vde_ptp_conn*)rv)->fdbind, fakefd) < 0 ) {
+			return NULL;
+		}
 
-    ((struct vde_ptp_conn*)rv)->fddata = fakefd;
-  }
+		((struct vde_ptp_conn*)rv)->fddata = fakefd;
+	}
 
 
-  return rv;
+	return rv;
 }
 
 static ssize_t vde_ptp_recv(VDECONN *conn,void *buf,size_t len,int flags)
 {
 	struct vde_ptp_conn *vde_conn = (struct vde_ptp_conn *)conn;
 
-  getpid();
-
-  if (vde_conn->listening) {
-    vde_conn->listening = 0;
-    int newfd = accept(vde_conn->fdbind, NULL, NULL);
-    if (dup2(newfd, vde_conn->fddata) < 0) {
-      getpid();
-      return -1;
-    }
-    return 0;
-  }
+	if (vde_conn->listening) {
+		vde_conn->listening = 0;
+		int newfd = accept(vde_conn->fdbind, NULL, NULL);
+		if (dup2(newfd, vde_conn->fddata) < 0) {
+			getpid();
+			return -1;
+		}
+		return 0;
+	}
 
 #ifdef CONNECTED_P2P
 	ssize_t retval;
 	if (__builtin_expect(((retval=recv(vde_conn->fddata,buf,len,0)) > 0), 1))
 		return retval;
 	else {
-		/*if (retval == 0 && vde_conn->outsock != NULL) {*/
-		/*	static struct sockaddr unspec={AF_UNSPEC};*/
-		/*	connect(vde_conn->fddata,&unspec,sizeof(unspec));*/
-		/*}*/
 		return -1;
 	}
 #else
@@ -221,32 +207,22 @@ static ssize_t vde_ptp_send(VDECONN *conn,const void *buf,size_t len,int flags)
 {
 	struct vde_ptp_conn *vde_conn = (struct vde_ptp_conn *)conn;
 
-  getpid();
-
-  if (vde_conn->listening) {
-    vde_conn->listening = 0;
-    int newfd = accept(vde_conn->fdbind, NULL, NULL);
-    if (dup2(newfd, vde_conn->fddata) < 0) {
-      getpid();
-      return -1;
-    }
-    return 0;
-  }
+	if (vde_conn->listening) {
+		vde_conn->listening = 0;
+		int newfd = accept(vde_conn->fdbind, NULL, NULL);
+		if (dup2(newfd, vde_conn->fddata) < 0) {
+			getpid();
+			return -1;
+		}
+		return 0;
+	}
 
 #ifdef CONNECTED_P2P
 	ssize_t retval;
 	if (__builtin_expect(((retval=send(vde_conn->fddata,buf,len,MSG_DONTWAIT)) >= 0),1))
 		return retval;
 	else {
-		if (__builtin_expect(errno == ENOTCONN || errno == EDESTADDRREQ,MSG_DONTWAIT)) {
-			/*if (__builtin_expect(vde_conn->outsock != NULL,1)) {*/
-			/*	connect(vde_conn->fddata, vde_conn->outsock,vde_conn->outlen);*/
-			/*	return send(vde_conn->fddata,buf,len,MSG_DONTWAIT);*/
-			/*} else*/
-			/*	return retval;*/
-      return -1;
-		} else
-			return retval;
+		return -1;
 	}
 #else
 	return sendto(vde_conn->fddata,buf,len,MSG_DONTWAIT, vde_conn->outsock,vde_conn->outlen);
@@ -272,8 +248,6 @@ static int vde_ptp_close(VDECONN *conn)
 		unlink(vde_conn->inpath);
 		free(vde_conn->inpath);
 	}
-	/*if (vde_conn->outsock != NULL)*/
-	/*	free(vde_conn->outsock);*/
 	free(vde_conn);
 
 	return 0;
@@ -282,53 +256,48 @@ static int vde_ptp_close(VDECONN *conn)
 int vde_ptp_pollhup_handler(VDECONN *conn) {
 	struct vde_ptp_conn *vde_conn = (struct vde_ptp_conn *)conn;
 
-  if (vde_conn->server) {
-    // Need to accept new connections on socket
+	if (vde_conn->server) {
+		// Need to accept new connections on socket
 
-    if (dup2(vde_conn->fdbind, vde_conn->fddata) < 0) {
-      return -1;
-    }
+		if (dup2(vde_conn->fdbind, vde_conn->fddata) < 0) {
+			return -1;
+		}
 
-    vde_conn->listening = 1;
+		vde_conn->listening = 1;
 
-    return 0;
-  } else {
-    // I'm a client so i need to become a server with bind and listen
+		return 0;
+	} else {
+		// I'm a client so i need to become a server with bind and listen
 
-    /*dprintf(STDERR_FILENO, "inpath: %s", vde_conn->inpath);*/
-    /**/
-    /*stat(vde_conn->inpath, NULL);*/
-    /*sleep(4);*/
+		int fddata;
+		if((fddata = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0)) < 0)
+			goto abort;
 
-    int fddata;
-    if((fddata = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0)) < 0)
-      goto abort;
+		struct sockaddr_un sockun;
+		memset(&sockun, 0, sizeof(sockun));
+		sockun.sun_family = AF_UNIX;
+		snprintf(sockun.sun_path, sizeof(sockun.sun_path)-1, "%s", vde_conn->inpath);
 
-    struct sockaddr_un sockun;
-    memset(&sockun, 0, sizeof(sockun));
-    sockun.sun_family = AF_UNIX;
-    snprintf(sockun.sun_path, sizeof(sockun.sun_path)-1, "%s", vde_conn->inpath);
+		int res = bind(fddata, (struct sockaddr *) &sockun, sizeof(sockun));
+		if (res < 0)
+			return -1;
 
-    int res = bind(fddata, (struct sockaddr *) &sockun, sizeof(sockun));
-    if (res < 0)
-      return -1;
+		res = listen(fddata, 0);
+		if (res < 0)
+			return -1;
 
-    res = listen(fddata, 0);
-    if (res < 0)
-      return -1;
+		vde_conn->fdbind = fddata;
 
-    vde_conn->fdbind = fddata;
+		if (dup2(vde_conn->fdbind, vde_conn->fddata) < 0 ) {
+			return -1;
+		}
 
-    if (dup2(vde_conn->fdbind, vde_conn->fddata) < 0 ) {
-      return -1;
-    }
+		vde_conn->server = 1;
+		vde_conn->listening = 1;
 
-    vde_conn->server = 1;
-    vde_conn->listening = 1;
+		return 0;
+	}
 
-    return 0;
-  }
-
-  abort:
-    return -1;
+abort:
+	return -1;
 }

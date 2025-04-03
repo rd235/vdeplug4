@@ -276,7 +276,7 @@ int vde_pollhup_handler(VDECONN *conn) {
 		/* vde_close frees the struct conn */
 		int rv=conn->module->vde_pollhup_handler(conn);
 		if (rv < 0 ) 
-      return vde_close(conn);
+			return vde_close(conn);
 
 		return rv;
 	} else {
