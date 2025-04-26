@@ -1,6 +1,7 @@
 /*
  * libvdeplug - A library to connect to a VDE Switch.
- * Copyright (C) 2013-2016 Renzo Davoli, University of Bologna
+ * point to point link
+ * Copyright (C) 2013-2025 Renzo Davoli, University of Bologna
  *
  * This library is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
@@ -27,10 +28,17 @@
 #include <stdint.h>
 #include <pwd.h>
 #include <grp.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
+#include <sys/epoll.h>
 #include "libvdeplug_mod.h"
+
+#define UNIX_PATH_MAX 108
+#define EPOLL_DATAFD 0
+#define EPOLL_LISTENFD 1
+#define ETH_HEADER_SIZE 14
 
 static VDECONN *vde_ptp_open(char *given_vde_url, char *descr,int interface_version,
 		struct vde_open_args *open_args);
@@ -51,234 +59,170 @@ struct vdeplug_module vdeplug_ops={
 struct vde_ptp_conn {
 	void *handle;
 	struct vdeplug_module *module;
-	int fddata;
-	char *inpath;
-	struct sockaddr *outsock;
-	size_t outlen;
+	int datafd;
+	int listenfd;
+	int epollfd;
+	char path[UNIX_PATH_MAX];
 };
 
 #define UNUSED(...) (void)(__VA_ARGS__)
 
-static VDECONN *vde_ptpf_open(char *given_vde_url, char *descr,int interface_version,
-		struct vde_open_args *open_args)
-{
-	int port=0;
-	char *group=NULL;
-	mode_t mode=0700;
-	int fddata=-1;
-	struct sockaddr_un sockun;
-	struct sockaddr_un sockout;
-	struct stat sockstat;
-	int res;
-	struct vde_ptp_conn *newconn;
-
-	if (open_args != NULL) {
-		if (interface_version == 1) {
-			port=open_args->port;
-			group=open_args->group;
-			mode=open_args->mode;
-		} else {
-			errno=EINVAL;
-			goto abort;
-		}
+static int get1byteack(int fd) {
+	unsigned char err;
+	struct pollfd pfd[] = {{fd, POLLIN, 0}};
+	int ret = poll(pfd, 1, 2000);
+	if (ret <= 0) {
+		if (ret == 0) errno = ETIMEDOUT;
+		return -1;
 	}
-
-	UNUSED(port);
-
-	memset(&sockun, 0, sizeof(sockun));
-	if((fddata = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0)) < 0)
-		goto abort;
-	sockun.sun_family = AF_UNIX;
-	snprintf(sockun.sun_path, sizeof(sockun.sun_path)-1, "%s", given_vde_url);
-	/* the socket already exists */
-	if(stat(sockun.sun_path,&sockstat) == 0) {
-		if (S_ISSOCK(sockstat.st_mode)) {
-			/* the socket is already in use */
-			res = connect(fddata, (struct sockaddr *) &sockun, sizeof(sockun));
-			if (res >= 0) {
-				errno = EADDRINUSE;
-				goto abort;
-			}
-			if (errno == ECONNREFUSED)
-				unlink(sockun.sun_path);
-		}
-	}
-	res = bind(fddata, (struct sockaddr *) &sockun, sizeof(sockun));
-	if (res < 0)
-		goto abort;
-	memset(&sockout, 0, sizeof(sockun));
-	sockout.sun_family = AF_UNIX;
-	snprintf(sockout.sun_path, sizeof(sockun.sun_path), "%s+", given_vde_url);
-	if (group) {
-		struct group *gs;
-		gid_t gid;
-		if ((gs=getgrnam(group)) == NULL)
-			gid=atoi(group);
-		else
-			gid=gs->gr_gid;
-		if (chown(sockun.sun_path,-1,gid) < 0)
-			goto abort;
-	}
-	chmod(sockun.sun_path,mode);
-
-	if ((newconn=calloc(1,sizeof(struct vde_ptp_conn)))==NULL)
-	{
-		errno=ENOMEM;
-		goto abort;
-	}
-
-	newconn->fddata=fddata;
-	newconn->inpath=strdup(sockun.sun_path);
-	newconn->outlen = sizeof(struct sockaddr_un);
-	newconn->outsock=malloc(newconn->outlen);
-	memcpy(newconn->outsock,&sockout,sizeof(struct sockaddr_un));
-
-	return (VDECONN *)newconn;
-
-abort:
-	if (fddata >= 0) close(fddata);
-	return NULL;
+	ret = recv(fd, &err, 1, 0);
+	if (ret == 1) {
+		if (err == 0) return 0;
+		errno = err;
+	} else if (ret == 0) 
+		errno = EFAULT;
+	return -1;
 }
 
-static VDECONN *vde_ptpm_open(char *given_vde_url, char *descr,int interface_version,
-		    struct vde_open_args *open_args)
-{
-	int port=0;
-	char *group=NULL;
-	mode_t mode=0700;
-	int fddata=-1;
-	struct sockaddr_un sockun;
-	struct sockaddr_un sockout;
-	struct stat sockstat;
-	int res;
-	struct vde_ptp_conn *newconn;
-
-	if (open_args != NULL) {
-		if (interface_version == 1) {
-			port=open_args->port;
-			group=open_args->group;
-			mode=open_args->mode;
-		} else {
-			errno=EINVAL;
-			goto abort;
-		}
-	}
-
-	UNUSED(port);
-
-	memset(&sockun, 0, sizeof(sockun));
-	memset(&sockout, 0, sizeof(sockun));
-	sockun.sun_family = AF_UNIX;
-	sockout.sun_family = AF_UNIX;
-	if((fddata = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0)) < 0)
-		goto abort;
-	snprintf(sockout.sun_path, sizeof(sockout.sun_path)-1, "%s", given_vde_url);
-	res = connect(fddata, (struct sockaddr *) &sockout, sizeof(sockout));
-	if (res < 0)
-		goto abort;
-	snprintf(sockun.sun_path, sizeof(sockun.sun_path)-1, "%s+", given_vde_url);
-	/* the socket already exists */
-	if(stat(sockun.sun_path,&sockstat) == 0) {
-		if (S_ISSOCK(sockstat.st_mode)) {
-			/* the socket is already in use */
-			res = connect(fddata, (struct sockaddr *) &sockun, sizeof(sockun));
-			if (res >= 0) {
-				errno = EADDRINUSE;
-				goto abort;
+static int ptpconnect(struct vde_ptp_conn *conn) {
+	int fd;
+	struct sockaddr_un addr = {
+		.sun_family = AF_UNIX
+	};
+	memcpy(addr.sun_path, conn->path, UNIX_PATH_MAX);
+	if (conn->datafd >= 0 || conn->listenfd >= 0)
+		return errno = EISCONN, -1;
+	if ((fd = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0)) < 0)
+		return -1;
+	for (;;) {
+		if ((connect(fd, (const struct sockaddr *) &addr, sizeof(addr))) >= 0) {
+			/* ck 1 byte ack */
+			if (get1byteack(fd) < 0) {
+				close(fd);
+				return -1;
 			}
-			if (errno == ECONNREFUSED)
-				unlink(sockun.sun_path);
+			struct epoll_event ev = {
+				.events = EPOLLIN | EPOLLHUP,
+				.data.u32 = EPOLL_DATAFD
+			};
+			if ((epoll_ctl(conn->epollfd, EPOLL_CTL_ADD, fd, &ev)) < 0) {
+				close(fd);
+				return -1;
+			}
+			conn->datafd = fd;
+			return 0;
 		}
+		if (errno == ENOENT) {
+			if ((bind(fd, (const struct sockaddr *) &addr, sizeof(addr))) >= 0) {
+				struct epoll_event ev = {
+					.events = EPOLLIN | EPOLLHUP,
+					.data.u32 = EPOLL_LISTENFD
+				};
+				if (listen(fd, 1) < 0) {
+					close(fd);
+					return -1;
+				}
+				if ((epoll_ctl(conn->epollfd, EPOLL_CTL_ADD, fd, &ev)) < 0) {
+					close(fd);
+					return -1;
+				}
+				conn->listenfd = fd;
+				return 0;
+			}
+			if (errno == EADDRINUSE)
+				continue;   // try again!
+			if (errno == ECONNREFUSED) {
+				unlink(conn->path);
+				continue;
+			}
+		}
+		return -1;
 	}
-	res = bind(fddata, (struct sockaddr *) &sockun, sizeof(sockun));
-	if (res < 0)
-		goto abort;
-	if (group) {
-		struct group *gs;
-		gid_t gid;
-		if ((gs=getgrnam(group)) == NULL)
-			gid=atoi(group);
-		else
-			gid=gs->gr_gid;
-		if (chown(sockun.sun_path,-1,gid) < 0)
-			goto abort;
-	}
-	chmod(sockun.sun_path,mode);
-
-	if ((newconn=calloc(1,sizeof(struct vde_ptp_conn)))==NULL)
-	{
-		errno=ENOMEM;
-		goto abort;
-	}
-
-	newconn->fddata=fddata;
-	newconn->inpath=strdup(sockun.sun_path);
-	newconn->outlen = sizeof(struct sockaddr_un);
-	newconn->outsock=malloc(newconn->outlen);
-	memcpy(newconn->outsock,&sockout,sizeof(struct sockaddr_un));
-
-	return (VDECONN *)newconn;
-
-abort:
-	if (fddata >= 0) close(fddata);
-	return NULL;
+	return 0;
 }
 
 static VDECONN *vde_ptp_open(char *given_vde_url, char *descr,int interface_version,
 		    struct vde_open_args *open_args)
 {
-	VDECONN *rv;
-	rv=vde_ptpf_open(given_vde_url, descr, interface_version, open_args);
-	if (!rv)
-		rv=vde_ptpm_open(given_vde_url, descr, interface_version, open_args);
-	return rv;
+	struct vde_ptp_conn *newconn;
+	if ((newconn = calloc(1,sizeof(struct vde_ptp_conn))) == NULL)
+    goto abort;
+	newconn->datafd = -1;
+	newconn->listenfd = -1;
+	if ((newconn->epollfd = epoll_create1(EPOLL_CLOEXEC)) < 0)
+		goto abort_calloc;
+	memset(newconn->path, 0, UNIX_PATH_MAX);
+	snprintf(newconn->path, UNIX_PATH_MAX, "%s", given_vde_url);
+
+	if (ptpconnect(newconn) < 0)
+		goto abort_calloc;
+
+	return (VDECONN *)newconn;
+
+abort_calloc:
+	free(newconn);
+abort:
+	return NULL;
 }
 
-static ssize_t vde_ptp_recv(VDECONN *conn,void *buf,size_t len,int flags)
+static ssize_t vde_ptp_recv(VDECONN *conn, void *buf, size_t len, int flags)
 {
 	struct vde_ptp_conn *vde_conn = (struct vde_ptp_conn *)conn;
-#ifdef CONNECTED_P2P
-	ssize_t retval;
-	if (__builtin_expect(((retval=recv(vde_conn->fddata,buf,len,0)) > 0), 1))
-		return retval;
-	else {
-		if (retval == 0 && vde_conn->outsock != NULL) {
-			static struct sockaddr unspec={AF_UNSPEC};
-			connect(vde_conn->fddata,&unspec,sizeof(unspec));
+	struct epoll_event ev;
+	int ret = epoll_wait(vde_conn->epollfd, &ev, 1, -1);
+	if (ret == 1) {
+		if (ev.data.u32 == EPOLL_DATAFD) {
+			if (ev.events & EPOLLHUP) {
+				close(vde_conn->datafd);
+				epoll_ctl(vde_conn->epollfd, EPOLL_CTL_DEL, vde_conn->datafd, &ev);
+				vde_conn->datafd = -1;
+				if (vde_conn->listenfd < 0) {
+					if (ptpconnect(vde_conn) < 0)
+						return -1;
+				}
+			}
+			if (ev.events & EPOLLIN) {
+				return recv(vde_conn->datafd, buf, len, 0);
+			}
 		}
-		return retval;
+		if (ev.data.u32 == EPOLL_LISTENFD) {
+			if (ev.events & EPOLLIN) {
+				int fd = accept(vde_conn->listenfd, NULL, NULL);
+				if (fd < 0)
+					return -1;
+				if (vde_conn->datafd >= 0) {
+					unsigned char err = EISCONN;
+					send(fd, &err, 1, 0);
+					close(fd); // 1 char ack
+				} else {
+					char err = 0;
+					send(fd, &err, 1, 0);
+					ev.events = EPOLLIN | EPOLLHUP;
+					ev.data.u32 = EPOLL_DATAFD;
+					if ((epoll_ctl(vde_conn->epollfd, EPOLL_CTL_ADD, fd, &ev)) < 0) {
+						close(fd);
+						return -1;
+					}
+					vde_conn->datafd = fd;
+				}
+			}
+		}
 	}
-#else
-	return recv(vde_conn->fddata,buf,len,0);
-#endif
+	return 1;
 }
 
-static ssize_t vde_ptp_send(VDECONN *conn,const void *buf,size_t len,int flags)
+static ssize_t vde_ptp_send(VDECONN *conn, const void *buf, size_t len, int flags)
 {
 	struct vde_ptp_conn *vde_conn = (struct vde_ptp_conn *)conn;
-#ifdef CONNECTED_P2P
-	ssize_t retval;
-	if (__builtin_expect(((retval=send(vde_conn->fddata,buf,len,0)) >= 0),1))
-		return retval;
-	else {
-		if (__builtin_expect(errno == ENOTCONN || errno == EDESTADDRREQ,0)) {
-			if (__builtin_expect(vde_conn->outsock != NULL,1)) {
-				connect(vde_conn->fddata, vde_conn->outsock,vde_conn->outlen);
-				return send(vde_conn->fddata,buf,len,0);
-			} else
-				return retval;
-		} else
-			return retval;
-	}
-#else
-	return sendto(vde_conn->fddata,buf,len,0, vde_conn->outsock,vde_conn->outlen);
-#endif
+	if (vde_conn->datafd >= 0 && len >= ETH_HEADER_SIZE)
+		return send(vde_conn->datafd, buf, len, MSG_DONTWAIT);
+	return len; // drop pckt if not connected
 }
 
 static int vde_ptp_datafd(VDECONN *conn)
 {
 	struct vde_ptp_conn *vde_conn = (struct vde_ptp_conn *)conn;
-	return vde_conn->fddata;
+	return vde_conn->epollfd;
 }
 
 static int vde_ptp_ctlfd(VDECONN *conn)
@@ -289,13 +233,13 @@ static int vde_ptp_ctlfd(VDECONN *conn)
 static int vde_ptp_close(VDECONN *conn)
 {
 	struct vde_ptp_conn *vde_conn = (struct vde_ptp_conn *)conn;
-	close(vde_conn->fddata);
-	if (vde_conn->inpath != NULL) {
-		unlink(vde_conn->inpath);
-		free(vde_conn->inpath);
+	if (vde_conn->listenfd >= 0) {
+		unlink(vde_conn->path);
+		close(vde_conn->listenfd);
 	}
-	if (vde_conn->outsock != NULL)
-		free(vde_conn->outsock);
+	if (vde_conn->datafd >= 0)
+		close(vde_conn->datafd);
+	close(vde_conn->epollfd);
 	free(vde_conn);
 
 	return 0;
