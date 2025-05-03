@@ -305,6 +305,12 @@ static VDECONN *vde_netnode_open(char *vde_url, char *descr,int interface_versio
 	int dirmode = STDDIRMODE;
 	gid_t gid = -1;
 
+	if (open_args) {
+		grpstr = open_args->group;
+		mode = open_args->mode;
+		dirmode = 02000 | mode | (mode & 0444) >> 2 | (mode & 0222) >> 1;
+	}
+
 	if (vde_parsepathparms(vde_url, parms) != 0)
 		return NULL;
 
