@@ -27,7 +27,6 @@
 #include <stdint.h>
 #include <time.h>
 #include <sys/epoll.h>
-#define __USE_GNU
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <net/if.h>

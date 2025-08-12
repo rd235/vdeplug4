@@ -6,7 +6,7 @@ project(vdeplug4
     LANGUAGES C)
 
 include(GNUInstallDirs)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -D_GNU_SOURCE")
 include_directories(
 		${PROJECT_SOURCE_DIR}/include
 		${PROJECT_SOURCE_DIR}/srcvdeplug4
