@@ -115,7 +115,7 @@ static char action[TSIZE - 2][TSIZE] = {
 
 static const char *hexchars = "0123456789ABCDEF0123456789abcdef";
 static inline int ch2n(char x) {
-	char *n = strchr(hexchars, x);
+	const char *n = strchr(hexchars, x);
 	return n ? (n - hexchars) % 16 : -1;
 }
 

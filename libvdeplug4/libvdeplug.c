@@ -75,7 +75,7 @@ static VDECONN *vde_open_samedir(char *modname, char *subdir, struct vde_open_pa
 	Dl_info info;
 	if (dladdr(&__vde_version_tag, &info) != 0) {
 		const char *libpath = info.dli_fname;
-		char *slash = strrchr(libpath, '/');
+		const char *slash = strrchr(libpath, '/');
 		if (slash) {
 			int len = slash - libpath;
 			snprintf(path, PATH_MAX, "%*.*s%s%s.so",
