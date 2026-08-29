@@ -3,14 +3,46 @@ VDE: Virtual Distributed Ethernet. Plug your VM directly to the cloud.
 
 Vdeplug4 is a new perspective on virtual networking.
 
-## hello vxvde world
+## what is vdeplug4
+
+This software package includes a modular library (libvdeplug) and some utility tools (vde\_plug and dpipe)
+
+The new libvdeplug library is backwards compatible with the previous versions (so it is already supported
+		by qemu, kvm, virtualbox, user-mode-linux, view-os, lwipv6, picotcp and all the other VM or virtual
+		stacks supporting vde2).
+
+The new library supports plug-ins so it is open to new developments in vrtual networking.
+
+Several plug-ins are provided as standard extensions of the library (batteries included):
+
+* vde: connect to legacy vde\_switch (provided by vde2)
+* ptp: peer to peer connection between two VM
+* tap: connect a VM or a virtual network to a tap interface
+* vxlan: connect vde switches or other vde networks to vxlan
+* vxvde: this plug-in implements distributed virtual switches
+* udp: udp tunnelling
+
+The address of a virtual network is defined by a *Virtual Network Locator* (VNL), a string
+whose syntax is similar to web URLs.
+
+examples:
+```
+vxvde://239.1.2.3/ttl=2
+tap://mytap
+vde:///tmp/myswitch
+myplugin://my.syntax/myarg=myvalue
+```
+This latter example will work provided there is a dynamic library named libvdeplug\_myplugin.so
+available and accepting the syntax of the parameters after '//'
+
+Other modules can be added. Vdeplug4 includes the header file and a support library to implement further plugins.
+
+## install `vdeplug4`
 
 The libexec library is required. If you don't already have it, you can install
 it from the [source repository](https://github.com/virtualsquare/s2argv-execs)
 
-On Debian and Ubuntu, the `libexecs-dev`
-package is available:
-
+On Debian and Ubuntu, the `libexecs-dev` package is available:
 ```
 apt install libexecs-dev
 ```
@@ -23,6 +55,13 @@ Install vdeplug4:
  $ make
  $ sudo make install
 ```
+
+`vdeplug4` is also available in Debian and Ubuntu:
+```
+apt install vdeplug
+```
+
+## A representative example: “hello vxvde world”
 
 Start several VM *on different hosts on the same LAN* (IP ttl must be 1).
 (VM virtual controllers must have different MAC addresses).
@@ -51,39 +90,6 @@ The tap can be defined on a remote host:
 ```
 $ vde_plug vxvde:// = ssh fqdn.of.remote.host,org vde_plug tap://
 ```
-
-## what is vdeplug4
-
-This software package includes a modular library (libvdeplug) and some utility tools (vde\_plug and dpipe)
-
-The new libvdeplug library is backwards compatible with the previous versions (so it is already supported
-		by qemu, kvm, virtualbox, user-mode-linux, view-os, lwipv6, picotcp and all the other VM or virtual
-		stacks supporting vde2).
-
-The new library supports plug-ins so it is open to new developments in vrtual networking.
-
-Several plug-ins are provided as standard extensions of the library (batteries included):
-- vde: connect to legacy vde\_switch (provided by vde2)
-- ptp: peer to peer connection between two VM
-- tap: connect a VM or a virtual network to 
-- vxlan: connect vde switches or other vde networks to vxlan
-- vxvde: this plug-in implements distributed virtual switches
-- udp: udp tunnelling
-
-The address of a virtual network is defined by a *Virtual Network Locator* (VNL), a string
-whose syntax is similar to web URLs.
-
-examples:
-```
-vxvde://239.1.2.3/ttl=2
-tap://mytap
-vde:///tmp/myswitch
-myplugin://my.syntax/myarg=myvalue
-```
-This latter example will work provided there is a dynamic library named libvdeplug\_myplugin.so
-available and accepting the syntax of the parameters after '//'
-
-Other modules can be added. Vdeplug4 includes the header file and a support library to implement further plugins.
 
 ## Credits:
 
