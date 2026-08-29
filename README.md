@@ -5,6 +5,16 @@ Vdeplug4 is a new perspective on virtual networking.
 
 ## hello vxvde world
 
+The libexec library is required. If you don't already have it, you can install
+it from the [source repository](https://github.com/virtualsquare/s2argv-execs)
+
+On Debian and Ubuntu, the `libexecs-dev`
+package is available:
+
+```
+apt install libexecs-dev
+```
+
 Install vdeplug4:
 ```
  $ mkdir build
