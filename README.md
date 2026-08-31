@@ -39,7 +39,7 @@ Other modules can be added. Vdeplug4 includes the header file and a support libr
 
 ## install `vdeplug4`
 
-The libexec library is required. If you don't already have it, you can install
+The libexecs library is required. If you don't already have it, you can install
 it from the [source repository](https://github.com/virtualsquare/s2argv-execs)
 
 On Debian and Ubuntu, the `libexecs-dev` package is available:
